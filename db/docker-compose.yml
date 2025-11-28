@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:17
+    container_name: tara-pg17
+    environment:
+      POSTGRES_USER: sane
+      POSTGRES_PASSWORD: qhqnsvud2025
+      POSTGRES_DB: tara_db            # 컨테이너 초기화 시 자동 생성됨
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init:/docker-entrypoint-initdb.d:ro
+      - ./backups:/backups:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sane -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:
