@@ -13,7 +13,7 @@
 
           <div class="row mt-2 mb-2">
             <div class="col">
-              <graph-buttons />
+              <graph-button-view />
             </div>
           </div>
 
@@ -40,34 +40,63 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, provide } from 'vue'
 import diagramService from '@/service/diagram/diagram.js'
 import stencilService from '@/service/x6/stencil.js'
 import ElementProperties from "@/components/ElementProperties.vue";
-import GraphButtons from "@/components/GraphButtons.vue";
+import GraphButtonView from "@/views/GraphButtonView.vue";
 import ThreatProperties from "@/components/ThreatProperties.vue";
 import ThreatEditModal from "@/components/ThreatEditModal.vue";
-
 import { useThreatModelStore } from '@/stores/threatModelStore.js';
+import {useCellStore} from "@/stores/cellStore.js";
+import axios from "axios";
+import {storeToRefs} from "pinia";
+
 const tmStore = useThreatModelStore()
 const modelInfo = computed(() => tmStore.data.modelInfo)
 const modifiedDiagram = computed(() => tmStore.modifiedDiagram)
 
 const stencil_container = ref(null)
 const graph_container = ref(null)
-const graph = ref(null)
+const graphInstance = ref(null) // Renamed from graph to avoid confusion
+const cellStore = useCellStore();
+const { ref: cellRef } = storeToRefs(cellStore);
+
+// Provide graph instance to child components
+// Note: provide expects a Ref or reactive object if we want children to reap updates? 
+// Or just the value? If we provide 'graph', children get the ref unless we unwrap.
+// Using provide('graph', graphInstance) means children inject('graph') will receive the Ref object.
+provide('graph', graphInstance)
 
 const threatEditModalRef = ref(false);
 
 onMounted(() => {
-  graph.value = diagramService.loadEditDiagram(graph_container.value, modifiedDiagram.value) // 그래프 초기화 (기존에 저장된 다이어그램이 있으면 로드)
-  stencilService.get(graph.value, stencil_container.value)  // Initialize the stencil (palette)
+  graphInstance.value = diagramService.loadEditDiagram(graph_container.value, modifiedDiagram.value) // 그래프 초기화
+  stencilService.get(graphInstance.value, stencil_container.value)  // Initialize the stencil
 
   // Listen to history changes
-  graph.value.getPlugin('history').on('change', () => {
-    const updated = Object.assign({}, modifiedDiagram.value)
-    updated.cells = graph.value.toJSON().cells
+  graphInstance.value.getPlugin('history').on('change', () => {
+    if (!modifiedDiagram.value) return;
+    const updated = { ...modifiedDiagram.value }
+    updated.cells = graphInstance.value.toJSON().cells
     tmStore.modifyDiagram(updated)
+  })
+
+  graphInstance.value.on('node:added', async (node) => {
+    console.log('node:added')
+    console.log('Current Cells:', node.cell)
+    let assetName = node.cell.data.name
+    let des = ''
+    await axios.get(`/api/v1/asset-description/${assetName}`)
+        .then(res => {
+            if (res.data.description) {
+              des = res.data.description
+            }
+        })
+        .catch(err => {
+            console.error(err);
+        })
+    cellStore.updateData({ description: des }, 'Graph.vue');
   })
 })
 

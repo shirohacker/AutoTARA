@@ -14,7 +14,7 @@
               <button class="btn btn-outline-secondary" type="button" @click="cmSearch = ''" v-if="cmSearch">X</button>
             </div>
 
-            <div class="list-group overflow-auto border-top" style="flex: 1; max-height: 500px;">
+            <div class="list-group overflow-auto border-top" style="flex: 1; max-height: 600px;">
               <div
                   v-for="cm in filteredCMs"
                   :key="cm.id"
@@ -22,11 +22,11 @@
               >
                 <div class="me-2">
                   <div class="fw-bold text-dark">
-                    <span class="badge bg-light text-dark border me-1">{{ cm.category }}</span>
+                    <span class="badge bg-light text-dark border me-1">{{ cm.id }}</span>
                     {{ cm.name }}
                   </div>
-                  <small class="text-muted d-block mt-1" style="font-size: 0.85rem;">
-                    {{ cm.summary }}
+                  <small class="text-muted d-block mt-1" style="font-size: 0.85rem; display:block; max-height: 100px; overflow-y: auto;">
+                    {{ cm.description }}
                   </small>
                 </div>
                 <button class="btn btn-sm btn-success mt-1" @click="addCM(cm)" :disabled="isCMSelected(cm.id)">
@@ -47,22 +47,22 @@
                 <thead class="table-light">
                 <tr>
                   <th>Name</th>
-                  <th style="width: 100px;">Type</th>
-                  <th style="width: 100px;">Effect</th>
-                  <th style="width: 100px;">Cost</th>
+                  <th style="width: 120px;">Type</th>
+                  <th style="width: 120px;">Effect</th>
+                  <th style="width: 120px;">Cost</th>
                   <th style="width: 60px;">U/C</th>
                   <th style="width: 40px;"></th>
                 </tr>
                 </thead>
                 <tbody>
-                <tr v-if="form.cms.length === 0">
+                <tr v-if="selectedCMs.length === 0">
                   <td colspan="10" class="text-center text-muted py-5">
                     <i class="fas fa-shield-alt fa-3x mb-3 text-secondary opacity-25"></i>
                     <div>No countermeasures selected.</div>
                     <div class="small">Select from the catalog to mitigate this threat.</div>
                   </td>
                 </tr>
-                <tr v-for="(item, index) in form.cms" :key="item.id">
+                <tr v-for="(item, index) in selectedCMs" :key="item.id">
                   <td>
                     <div class="fw-bold">{{ item.name }}</div>
                     <div class="text-muted text-xs">{{ item.id }}</div>
@@ -92,7 +92,7 @@
                     <span class="badge bg-dark">{{ calcUC(item).toFixed(1) }}</span>
                   </td>
                   <td class="text-center">
-                    <button class="btn btn-sm btn-link text-danger p-0" @click="form.cms.splice(index, 1)">
+                    <button class="btn btn-sm btn-link text-danger p-0" @click="deleteCM(item.id)">
                       <i class="fas fa-trash-alt"></i>
                     </button>
                   </td>
@@ -102,7 +102,7 @@
             </div>
           </div>
           <div class="card-footer d-flex justify-content-end align-items-center bg-white">
-            <button class="btn btn-sm btn-outline-secondary" @click="sortCMs" :disabled="form.cms.length < 2">
+            <button class="btn btn-sm btn-outline-secondary" @click="sortCMs" :disabled="selectedCMs.length < 2">
               <i class="fas fa-sort-amount-down me-1"></i> Sort by Efficiency (U/C)
             </button>
           </div>
@@ -113,52 +113,102 @@
 </template>
 
 <script setup>
-import {computed, reactive, ref} from "vue";
+import {computed, onMounted, reactive, ref, watch} from "vue"
+import axios from "axios"
+import {useThreatEditStore} from "@/stores/threatEditStore.js";
+import {useThreatModelStore} from "@/stores/threatModelStore.js";
+import {storeToRefs} from "pinia";
 
-const form = reactive({
-  assetName: 'IVI Head Unit (Android Automotive)',
-  attackVector: {
-    id: 'T1189', // Drive-by Compromise
-    name: 'Drive-by Compromise',
-    ttc: 24, // hours
-    cve: ['CVE-2023-45122', 'CVE-2024-0012'],
-    description: 'Adversaries may gain access to a system through a user visiting a website over the normal course of browsing. The browser exploits vulnerability to execute arbitrary code.'
-  },
-  cms: [] // Will be populated below
-});
+const editStore = useThreatEditStore();
+const tmStore = useThreatModelStore();
+
+const { threatData } = storeToRefs(editStore);
+
+const selectedCMs = reactive([]);
 
 const cmSearch = ref('');
-const isCMSelected = (id) => form.cms.some(c => c.id === id);
+const isCMSelected = (id) => selectedCMs.some(c => c.id === id);
 const calcUC = (item) => (item.effectiveness * 10) / item.cost;
-const sortCMs = () => { form.cms.sort((a, b) => calcUC(b) - calcUC(a)); };
+const sortCMs = () => { selectedCMs.sort((a, b) => calcUC(b) - calcUC(a)); };
 
 const addCM = (cm) => {
   if (!isCMSelected(cm.id)) {
-    form.cms.push({
+    // 기본값으로 예방, 효과, 비용 설정 (DB에 데이터가 없음)
+    selectedCMs.push({
       ...cm,
       mitigationTypes: 'prevent',
       effectiveness: 2, // Medium default
       cost: 2 // Medium default
     });
   }
+  tmStore.setModified()
 };
 
-const allCMs = [
-  { id: 'CM-SEC-01', category: 'Network', name: 'Firewall (Ingress)', summary: 'Filters incoming traffic based on IP/Port rules.' },
-  { id: 'CM-SEC-02', category: 'Crypto', name: 'TLS 1.3 Encryption', summary: 'End-to-end encryption for data in transit.' },
-  { id: 'CM-HW-05', category: 'Hardware', name: 'Secure Boot', summary: 'Validates signature of bootloader and kernel.' },
-  { id: 'CM-IDS-01', category: 'Detection', name: 'Host-based IDS', summary: 'Monitors system calls for anomalous behavior.' },
-  { id: 'CM-IAM-03', category: 'Access', name: 'MFA for Admin', summary: 'Requires multi-factor authentication for root access.' },
-  { id: 'CM-SW-09', category: 'Software', name: 'Input Validation', summary: 'Sanitizes all user inputs to prevent injection.' },
-];
+const deleteCM = (cmId) => {
+  const index = selectedCMs.findIndex(c => c.id === cmId);
+  if (index !== -1) {
+    selectedCMs.splice(index, 1);
+  }
+  tmStore.setModified()
+};
+
+// selectedCm 을 watch 하고 있다가 변경사항이 있으면 editStore.threatData.selectedCMs 에도 반영
+watch(selectedCMs, (newVal) => {
+  editStore.threatData.selectedCMs = JSON.parse(JSON.stringify(newVal));
+}, { deep: true });
+
+const allCMs = ref([
+  /**
+   * Example Data Structure:
+   * { id: 'M1036', name: 'Account Use Policies', description: 'Configure features related to account use like login attempt lockouts, specific login times, etc.' },
+   */
+]);
 
 const filteredCMs = computed(() => {
-  if (!cmSearch.value) return allCMs;
+  if (!cmSearch.value) return allCMs.value;
+
   const k = cmSearch.value.toLowerCase();
-  return allCMs.filter(cm =>
-      cm.name.toLowerCase().includes(k) ||
-      cm.id.toLowerCase().includes(k) ||
-      cm.category.toLowerCase().includes(k)
+
+  return allCMs.value.filter(cm =>
+      (cm.name && cm.name.toLowerCase().includes(k)) ||
+      (cm.id && cm.id.toLowerCase().includes(k)) ||
+      (cm.description && cm.description.toLowerCase().includes(k))
   );
 });
+
+const init = () => {
+  // [Fix] 초기 로드시 store에 저장된 selectedCMs가 있다면 가져오기
+  if (threatData.value && threatData.value.selectedCMs && Array.isArray(threatData.value.selectedCMs)) {
+    selectedCMs.splice(0, selectedCMs.length, ...JSON.parse(JSON.stringify(threatData.value.selectedCMs)));
+  }
+
+  let mitreId = threatData.value.mitre_id || null;
+  if (mitreId && mitreId !== '') {
+    getMitreCMsByThreatId(mitreId)
+  } else {
+    getAllMitreCMs()
+  }
+}
+
+const getMitreCMsByThreatId = async (mitreId) => {
+  try {
+    const res = await axios.get(`/api/v1/mitre/countermeasures/${mitreId}`)
+    allCMs.value = res.data;
+  } catch (error) {
+    console.error('Error get MITRE countermeasures by threat ID:', error);
+  }
+};
+
+const getAllMitreCMs = async () => {
+  try {
+    const res = await axios.get('/api/v1/mitre/countermeasures')
+    allCMs.value = res.data
+  } catch (error) {
+    console.error('Error get MITRE countermeasures:', error);
+  }
+};
+
+onMounted(() => {
+  init()
+})
 </script>

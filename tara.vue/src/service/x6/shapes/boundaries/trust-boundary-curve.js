@@ -1,5 +1,5 @@
 import { Shape } from '@antv/x6';
-import defaultProperties from '@/service/entity/default-properties';
+import defaultProperties from '@/service/entity/default-properties.js';
 
 const name = 'trust-boundary-curve';
 

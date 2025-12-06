@@ -1,5 +1,5 @@
 import { Shape } from '@antv/x6';
-import { ports } from '../ports.js';
+import { ports } from '../../ports.js';
 
 const name = 'actor';
 

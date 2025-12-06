@@ -11,5 +11,6 @@
 
 <script setup>
 import Navbar from '@/components/Navbar.vue'
+import "vue-toastification/dist/index.css";
 
 </script>

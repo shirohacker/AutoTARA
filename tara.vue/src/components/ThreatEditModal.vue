@@ -14,7 +14,7 @@
         <div class="modal-content">
 
           <div class="modal-header">
-            <h5 class="modal-title">TARA Threat Edit</h5>
+            <h5 class="modal-title">Threat Edit : {{ assetName }}</h5>
             <button type="button" class="btn-close" aria-label="Close" @click="handleCancel"></button>
           </div>
 
@@ -65,7 +65,7 @@
 
 <script setup>
 import { storeToRefs } from 'pinia'
-import {computed, reactive, ref} from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import TaraCtsaTab from '@/components/TaraCtsaTab.vue'
 import TaraCrraTab from '@/components/TaraCrraTab.vue'
 import { useCellStore } from "@/stores/cellStore.js"
@@ -84,6 +84,11 @@ const visible = ref(false)
 const activeTab = ref('ctsa');
 
 const threat = ref(null)
+const assetName = ref(null)
+
+onMounted(() => {
+  console.log('[ThreatEditModal] Mounted');
+})
 
 /**
  * Open Threat Edit Modal
@@ -91,11 +96,13 @@ const threat = ref(null)
  * @param state - 'new' | 'exist'
  */
 const editThreat = (threatId, state) => {
+  activeTab.value = 'ctsa';
+
   const crnThreat = cellRef.value.data.threats.find(t => t.id === threatId);
   threat.value = {...crnThreat}
   if (crnThreat) {
-    const assetName = cellRef.value.label
-    editStore.startEditing(assetName, crnThreat, state);
+    assetName.value = cellRef.value.label
+    editStore.startEditing(assetName.value, crnThreat, state);
     visible.value = true;
   }
 }
@@ -138,14 +145,22 @@ const handleApply = () => {
     crnThreat.ttp_score = editStore.threatData.ttp_score
     crnThreat.cve = editStore.threatData.cve
     crnThreat.countermeasures = editStore.threatData.countermeasures
+    crnThreat.selectedCMs = editStore.threatData.selectedCMs
+
+    if (crnThreat.selectedCMs.length > 0) {
+      crnThreat.status = 'mitigated'
+    } else {
+      crnThreat.status = 'open'
+    }
 
     // 3. [추가] Store의 modifiedDiagram(JSON) 동기화
     tmStore.updateCellDataInDiagram(cellRef.value.id, cellRef.value.data);
 
-    cellStore.updateData(cellRef.value.data)
+    cellStore.updateData(cellRef.value.data, 'ThreatEditModal.vue')
     tmStore.setModified();
     dataChanged.updateStyleAttrs(cellRef.value);
   }
+
   editStore.clearData()
   visible.value = false;
 };
@@ -157,7 +172,7 @@ defineExpose({
 </script>
 
 <style scoped>
-.modal-dialog.modal-xl { max-width: 1200px; }
+.modal-dialog.modal-xl { max-width: 1300px; }
 
 .nav-tabs .nav-link {
   color: #6c757d;

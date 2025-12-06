@@ -12,25 +12,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@antv/x6": "^2.18.1",
-    "@antv/x6-plugin-clipboard": "^2.1.6",
-    "@antv/x6-plugin-dnd": "^2.1.1",
-    "@antv/x6-plugin-export": "^2.1.6",
-    "@antv/x6-plugin-history": "^2.2.4",
-    "@antv/x6-plugin-keyboard": "^2.2.3",
-    "@antv/x6-plugin-scroller": "^2.0.10",
-    "@antv/x6-plugin-selection": "^2.2.2",
-    "@antv/x6-plugin-snapline": "^2.1.7",
-    "@antv/x6-plugin-stencil": "^2.1.5",
-    "@antv/x6-plugin-transform": "^2.1.8",
+    "@antv/x6": "^3.1.0",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "axios": "^1.13.2",
     "bootstrap": "^5.3.8",
-    "pinia": "^3.0.3",
+    "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",
+    "tslib": "^2.8.1",
     "uuid": "^13.0.0",
-    "vue": "^3.5.22",
-    "vue-router": "^4.6.3"
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3",
+    "vue-toastification": "^2.0.0-rc.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.1",

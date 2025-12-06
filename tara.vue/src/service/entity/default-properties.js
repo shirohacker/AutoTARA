@@ -8,9 +8,10 @@ const actor = {
     zIndex: 0,
     data: {
         type: 'tm.Actor',
-        name: 'Actor',
-        description: '',
         isTrustBoundary: false,
+        description: '',
+        isEntry: false,
+        isTarget: false,
         outOfScope: false,
         reasonOutOfScope: '',
         hasOpenThreats: false,
@@ -141,10 +142,11 @@ const process = {
     zIndex: 0,
     data: {
         type: 'tm.Process',
-        name: 'Process',
-        description: '',
         outOfScope: false,
         isTrustBoundary: false,
+        description: '',
+        isEntry: false,
+        isTarget: false,
         reasonOutOfScope: '',
         hasOpenThreats: false,
         threats: []
@@ -173,10 +175,11 @@ const store = {
     zIndex: 0,
     data: {
         type: 'tm.Store',
-        name: 'Store',
-        description: '',
         outOfScope: false,
         isTrustBoundary: false,
+        description: '',
+        isEntry: false,
+        isTarget: false,
         reasonOutOfScope: '',
         hasOpenThreats: false,
         threats: []
@@ -209,6 +212,7 @@ const propsByType = {
 };
 
 const defaultData = (type) => {
+    console.log('defaultData for type: ' + type);
     if (!Object.keys(propsByType).some(x => x === type)) {
         throw new Error(`Unknown entity: ${type}`);
     }

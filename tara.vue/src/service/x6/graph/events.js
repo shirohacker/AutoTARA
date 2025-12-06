@@ -3,11 +3,10 @@
  * @description Event listeners for the graph
  */
 import dataChanged from './data-changed.js';
-import shapes from '@/service/x6/shapes';
+import shapes from '@/service/x6/shapes/generics/index.js';
 
 import { useThreatModelStore } from '@/stores/threatModelStore.js';
 import { useCellStore } from "@/stores/cellStore.js";
-import {storeToRefs} from "pinia";
 
 const showPorts = (show) => {
     const container = document.getElementById('graph_container');
@@ -40,9 +39,18 @@ const edgeConnected = (graph) => ({ edge }) => {
 };
 
 const mouseLeave = ({ cell }) => {
-    if (cell.hasTools()) {
-        cell.removeTools();
-    }
+    // 지워야 할 툴 목록
+    const toolsToRemove = ['boundary', 'button-remove', 'vertices', 'source-arrowhead', 'target-arrowhead'];
+
+    toolsToRemove.forEach(tool => {
+        if (cell.hasTool(tool)) {
+            cell.removeTool(tool);
+        }
+    });
+
+    // [중요] 여기서는 entry-marker-tool과 target-marker-tool을 지우지 않습니다.
+    // 따라서 마우스가 떠나도 마커는 계속 남아있게 됩니다.
+
     showPorts(false);
 };
 
@@ -61,7 +69,7 @@ const mouseEnter = ({ cell }) => {
 
 const cellAdded = (graph) => ({ cell }) => {
     const cellStore = useCellStore();
-    console.debug('cell added with shape: ', cell.shape);
+    console.log('cell added with shape: ', cell.shape);
     // ensure selection of other components is removed
     graph.resetSelection();
 
@@ -101,6 +109,7 @@ const cellAdded = (graph) => ({ cell }) => {
 
     dataChanged.updateProperties(cell);
     dataChanged.updateStyleAttrs(cell);
+    // dataChanged.updateAssetDescription(cell)
 
     if (cell.shape === 'edge') {
         console.debug('added new edge (flow parent)');
@@ -164,10 +173,17 @@ const cellUnselected = ({ cell }) => {
     cellStore.unselect();
 };
 
-const cellDataChanged = ({ cell }) => {
+const cellDataChanged = ({ cell, options }) => {
     const cellStore = useCellStore();
     const tmStore = useThreatModelStore();
-    cellStore.select(cell);
+
+    // 2. [핵심] 'skipSelection' 옵션이 있을 때는 선택을 변경하지 않습니다!
+    // 이 줄이 있어야 백그라운드 업데이트 시 선택이 튀는 것을 막습니다.
+    if (!options || !options.skipSelection) {
+        cellStore.select(cell);
+    }
+
+    // 스타일 업데이트는 항상 수행
     dataChanged.updateStyleAttrs(cell);
     tmStore.setModified();
 };

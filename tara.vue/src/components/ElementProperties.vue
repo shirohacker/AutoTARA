@@ -18,7 +18,7 @@
             Asset Name
           </label>
           <input
-              v-model="cellRef.label"
+              v-model="assetName"
               type="text"
               class="form-control form-control-sm fw-bold"
               id="name"
@@ -31,7 +31,7 @@
             Description
           </label>
           <textarea
-              v-model="cellRef.data.description"
+              v-model="description"
               class="form-control form-control-sm"
               id="description"
               placeholder="Describe the function or role of this asset..."
@@ -88,20 +88,59 @@ import dataChanged from '@/service/x6/graph/data-changed.js';
 const cellStore = useCellStore();
 const { ref: cellRef } = storeToRefs(cellStore);
 
-// 1. UI 반응성을 위한 로컬 상태 변수 선언
 const assetName = ref('');
 const description = ref('');
-const outOfScope = ref(false);       // v-if를 제어할 핵심 변수
+const outOfScope = ref(false);
 const reasonOutOfScope = ref('');
 
-// 2. [X6 -> Vue] 그래프에서 노드를 선택했을 때, 데이터를 로컬 변수로 가져오기
 watch(cellRef, (newCell) => {
-  if (newCell && newCell.data) {
-    // X6 데이터를 가져와서 UI 변수에 할당
-    assetName.value = newCell.data.name || '';
-    description.value = newCell.data.description || '';
-    outOfScope.value = newCell.data.outOfScope || false; // 여기서 값이 들어옴
-    reasonOutOfScope.value = newCell.data.reasonOutOfScope || '';
+  if (newCell && cellRef.value.data) {
+    assetName.value = cellRef.value.data.name || '';
+    description.value = cellRef.value.data.description || '';
+    outOfScope.value = cellRef.value.data.outOfScope || false;
+    reasonOutOfScope.value = cellRef.value.data.reasonOutOfScope || '';
+  } else {
+    assetName.value = '';
+    description.value = '';
+    outOfScope.value = false;
+    reasonOutOfScope.value = '';
+  }
+}, { immediate: true });
+
+watch(assetName, (val) => {
+  if (!cellRef.value) return;
+  cellStore.updateData({ name: val }, 'ElementProperties.vue');
+  cellRef.value.attr('label/text', val); // 라벨 시각적 변경
+});
+
+const syncFromCell = () => {
+  if (cellRef.value && cellRef.value.getData) {
+    const data = cellRef.value.getData(); // 최신 데이터 가져오기
+
+    // 로컬 변수 업데이트 -> 화면이 즉시 바뀜
+    assetName.value = data.name || '';
+    description.value = data.description || '';
+    outOfScope.value = data.outOfScope || false;
+    reasonOutOfScope.value = data.reasonOutOfScope || '';
+
+    // console.log('🔄 화면 갱신됨:', data.description); // 확인용 로그
+  }
+};
+
+watch(cellRef, (newCell, oldCell) => {
+
+  // (중요) 이전에 선택했던 셀의 리스너 제거 (안 하면 메모리 새고 버그 생김)
+  if (oldCell) {
+    oldCell.off('change:data', syncFromCell);
+  }
+
+  if (newCell) {
+    // ① 선택하자마자 현재 데이터로 한 번 채우기
+    syncFromCell();
+
+    // ② [핵심] "앞으로 이 셀의 데이터가 변하면(API 응답 등) syncFromCell을 실행해라!" 라고 등록
+    newCell.on('change:data', syncFromCell);
+
   } else {
     // 선택 해제 시 초기화
     assetName.value = '';
@@ -109,42 +148,25 @@ watch(cellRef, (newCell) => {
     outOfScope.value = false;
     reasonOutOfScope.value = '';
   }
-}, { immediate: true }); // 컴포넌트 로드 시 즉시 실행
+}, { immediate: true });
 
-// 3. [Vue -> X6] UI에서 값을 변경했을 때, 그래프에 반영하기
-// 각각의 ref가 변경될 때마다 updateData 호출
 
-// 3-1. Asset Name 변경 감지
-watch(assetName, (val) => {
-  if (!cellRef.value) return;
-  cellStore.updateData({ name: val });
-  cellRef.value.attr('label/text', val); // 라벨 시각적 변경
-  // dataChanged.updateProperties(cellRef.value); // 필요 시 호출
-});
 
-// 3-2. Description 변경 감지
 watch(description, (val) => {
   if (!cellRef.value) return;
-  cellStore.updateData({ description: val });
+  cellStore.updateData({ description: val }, 'ElementProperties.vue');
 });
 
-// 3-3. Out of Scope 스위치 변경 감지 (★ 여기가 중요)
 watch(outOfScope, (val) => {
   if (!cellRef.value) return;
-
-  // 1. 데이터 업데이트
-  cellStore.updateData({ outOfScope: val });
-
-  // 2. 스타일 업데이트 (회색 처리 등)
+  cellStore.updateData({ outOfScope: val }, 'ElementProperties.vue');
   dataChanged.updateStyleAttrs(cellRef.value);
-
-  // 이제 'val'이 true로 바뀌면, outOfScope.value가 true이므로 v-if가 즉시 반응합니다.
 });
 
 // 3-4. Reason 변경 감지
 watch(reasonOutOfScope, (val) => {
   if (!cellRef.value) return;
-  cellStore.updateData({ reasonOutOfScope: val });
+  cellStore.updateData({ reasonOutOfScope: val }, 'ElementProperties.vue');
 });
 
 </script>

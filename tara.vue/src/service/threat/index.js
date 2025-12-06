@@ -13,14 +13,32 @@ export const createNewThreat = (number) => {
         ttc: 1, // Time-to-Compromise
         ttp_score: { },
         cve: [],
-        countermeasures: []
+        selectedCMs: []
     };
 };
+
+export const createNewThreatWithMitre = (mitreTechnique, number) => {
+    return {
+        id: v4(),
+        mitre_id: mitreTechnique.id,
+        technique: mitreTechnique.name,
+        status: 'open', // open, mitigated
+        description: mitreTechnique.description || '',
+        riskScore: '3.3',  // TTP Risk Score
+        new: false,
+        number: number, // Sequential Threat Number
+        ttc: 1, // Time-to-Compromise
+        ttp_score: mitreTechnique.ttp_scoring || {},
+        cve: [],
+        selectedCMs: []
+    };
+}
 
 export const hasOpenThreats = (data) => !!data && !!data.threats &&
     data.threats.filter(x => x.status.toLowerCase() === 'open').length > 0;
 
 export default {
     createNewThreat,
+    createNewThreatWithMitre,
     hasOpenThreats
 }

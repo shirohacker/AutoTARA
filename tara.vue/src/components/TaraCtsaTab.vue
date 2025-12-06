@@ -5,10 +5,10 @@
         <div class="card-header bg-light fw-bold">Threat Basics</div>
         <div class="card-body">
 
-          <div class="mb-3">
-            <label class="form-label small text-muted fw-bold">ASSET NAME</label>
-            <input type="text" class="form-control" v-model.trim="assetName" disabled />
-          </div>
+<!--          <div class="mb-3">-->
+<!--            <label class="form-label small text-muted fw-bold">ASSET NAME</label>-->
+<!--            <input type="text" class="form-control" v-model.trim="assetName" disabled />-->
+<!--          </div>-->
 
           <div class="mb-3">
             <label class="form-label small text-muted fw-bold">MITRE ATT&CK ID</label>
@@ -33,6 +33,7 @@
                     class="btn btn-outline-primary"
                     type="button"
                     @click="fetchMitreData(threatData.mitre_id)"
+                    :disabled="!threatData.mitre_id"
                 >
                   <i class="fas fa-sync-alt me-1"></i> Fetch
                 </button>
@@ -56,9 +57,9 @@
                 </ul>
                 <div v-else-if="keyword.trim().length > 0" class="p-3 text-center bg-light">
                   <div class="mb-2 text-muted small">No matching technique found.</div>
-                  <button class="btn btn-sm btn-success" @mousedown.prevent="addNewTechniqueFromInput">
-                    <i class="fas fa-plus me-1"></i> Add "{{ keyword.trim() }}"
-                  </button>
+<!--                  <button class="btn btn-sm btn-success" @mousedown.prevent="addNewTechniqueFromInput">-->
+<!--                    <i class="fas fa-plus me-1"></i> Add "{{ keyword.trim() }}"-->
+<!--                  </button>-->
                 </div>
               </div>
             </div>
@@ -94,7 +95,7 @@
 
           <div class="mb-3">
             <label class="form-label small text-muted fw-bold">DESCRIPTION</label>
-            <textarea class="form-control" v-model="threatData.description" rows="3"></textarea>
+            <textarea class="form-control" v-model="threatData.description" rows="6"></textarea>
           </div>
 
         </div>
@@ -132,14 +133,13 @@
                   </select>
                 </td>
                 <td class="text-center">
-                    <span
-                        class="badge bg-light text-dark border cursor-pointer"
-                        data-bs-toggle="tooltip"
-                        data-bs-placement="right"
-                        :title="risk.description"
-                    >
-                      <i class="fas fa-info"></i>
-                    </span>
+                      <span
+                          class="badge bg-light text-dark border cursor-pointer"
+                          data-bs-toggle="tooltip" data-bs-placement="right"
+                          :title="risk.description"
+                      >
+                        <i class="fas fa-info"></i>
+                      </span>
                 </td>
               </tr>
               </tbody>
@@ -166,25 +166,26 @@
 </template>
 
 <script setup>
-import {computed, onMounted, reactive, ref, watch} from 'vue'
+import {computed, onMounted, reactive, ref, watch, nextTick} from 'vue'
 import { storeToRefs } from 'pinia';
 import { useThreatEditStore } from "@/stores/threatEditStore.js";
+import axios from 'axios';
+import { Tooltip } from 'bootstrap';
 
 const editStore = useThreatEditStore();
 
-const { assetName, threatData } = storeToRefs(editStore);
+const { threatData } = storeToRefs(editStore);
 
 const keyword = ref('');
 const showDropdown = ref(false);
 const suggestions = ref([]);
 
-const dummySuggestions = [
-  { id: 'T1068', name: 'Exploitation for Privilege Escalation' },
-  { id: 'T1189', name: 'Drive-by Compromise' },
-  { id: 'T1190', name: 'Exploit Public-Facing Application' },
-  { id: 'T1027', name: 'Obfuscated Files or Information' },
-  { id: 'T1566', name: 'Phishing' }
-];
+const mitreTechniques = ref([
+  /**
+    * Example Data Structure
+    * { id: 'T1068', name: 'Exploitation for Privilege Escalation' },
+   */
+]);
 
 const defaultRiskRows = [
   { key:'proximity',         label:'Proximity',                  weight:0.1, value:3, description: '' },
@@ -194,7 +195,7 @@ const defaultRiskRows = [
   { key:'Impact_I',          label:'Impact: Integrity',          weight:0.1, value:3, description: '' },
   { key:'Impact_A',          label:'Impact: Availability',       weight:0.1, value:3, description: '' },
   { key:'Prior Use',         label:'Prior Use',                  weight:0.1, value:3, description: '' },
-  { key:'Required Skills',   label:'Required Skils',             weight:0.1, value:3, description: '' },
+  { key:'Required Skills',   label:'Required Skills',            weight:0.1, value:3, description: '' },
   { key:'Required Resources',label:'Required Resources',         weight:0.1, value:3, description: '' },
   { key:'Stealth',           label:'Stealth',                    weight:0.1, value:3, description: '' },
   { key:'Attribution',       label:'Attribution',                weight:0.1, value:3, description: '' }
@@ -217,7 +218,7 @@ const onTechniqueInput = () => {
     return;
   }
   // Mock Filtering
-  suggestions.value = dummySuggestions.filter(s =>
+  suggestions.value = mitreTechniques.value.filter(s =>
       s.id.toLowerCase().includes(keyword.value.toLowerCase()) ||
       s.name.toLowerCase().includes(keyword.value.toLowerCase())
   );
@@ -230,10 +231,40 @@ const selectTechnique = (item) => {
   if (threatData.value) {
     threatData.value.mitre_id = item.id;
     threatData.value.technique = item.name;
+    // Fetch TTP Score, Description, Countermeasures
+
   }
   showDropdown.value = false;
 };
-const fetchMitreData = (id) => { alert(`Fetching data for ${id} from MITRE API... (Mock)`); };
+
+const fetchMitreData = (id) => {
+  if(confirm('Are you sure you want to fetch data for ' + id + '?\nThis will overwrite existing Technique, Description, and TTP Score.')) {
+    axios.get(`api/v1/mitre/technique/${id}`)
+        .then(res => {
+          const data = res.data;
+          if (threatData.value) {
+            threatData.value.technique = data.name;
+            threatData.value.description = data.description;
+            // Update TTP Score
+            if (Array.isArray(data.ttp_score)) {
+              data.ttp_score.forEach(savedItem => {
+                const target = riskRows.find(r => r.key === savedItem.key);
+                if (target) {
+                  target.value = savedItem.value;
+                  target.weight = savedItem.weight;
+                }
+              });
+            }
+          }
+          keyword.value = data.name;
+        })
+        .catch(err => {
+          console.error(err);
+          alert('Failed to fetch MITRE technique data.');
+        });
+  }
+};
+
 const addNewTechniqueFromInput = () => {
   if (threatData.value) {
     threatData.value.technique = keyword.value;
@@ -257,7 +288,7 @@ const resetDefaultWeights = () => {
   defaultRiskRows.forEach((row, index) => {
     if (riskRows[index]) {
       riskRows[index].weight = row.weight;
-      riskRows[index].value = row.value;
+      // riskRows[index].value = row.value;
     }
   });
 };
@@ -294,28 +325,111 @@ const riskLevel = computed(() => {
   return 'Danger';
 });
 
-onMounted(() => {
-  // 방어 코드: threatData가 없거나 attackVector가 없으면 패스
+const init = () => {
   if (!threatData.value) return;
 
-  // 기존 저장된 점수 배열 가져오기 (예시 구조)
-  const savedScores = threatData.value.ttp_score;
+  getTTPScoreReason()
 
-  if (threatData.mitre_id) {
-    keyword.value = threatData.technique
+  const savedScores = threatData.value.ttp_score;
+  if (savedScores) {
+    setExistTTPScores(savedScores)
   }
 
+  if (threatData.value.mitre_id) {
+    keyword.value = threatData.value.technique
+  }
+}
+
+const getTTPScoreReason = () => {
+  let threatId = threatData.value.mitre_id || null;
+  if (threatId) {
+    axios.get(`/api/v1/mitre/ttp-score-reason/${threatId}`)
+        .then(res => {
+          const reasons = res.data;
+
+          // Helper to normalize keys for loose matching (lowercase, remove non-alphanumeric)
+          const normalize = (k) => k.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+          // Create a normalized map of the API response
+          const normalizedReasons = {};
+          Object.keys(reasons).forEach(k => {
+            normalizedReasons[normalize(k)] = reasons[k];
+          });
+
+          riskRows.forEach(row => {
+            const rowKey = row.key;
+            const normalizedRowKey = normalize(rowKey);
+
+            // Priority 1: Exact Match
+            if (reasons[rowKey]) {
+              row.description = reasons[rowKey];
+            }
+            // Priority 2: Normalized Match
+            else if (normalizedReasons[normalizedRowKey]) {
+              row.description = normalizedReasons[normalizedRowKey];
+            }
+            // Priority 3: Specific handling for Impact mappings if needed
+            else if (rowKey === 'Impact_C' && normalizedReasons['confidentiality']) row.description = normalizedReasons['confidentiality'];
+            else if (rowKey === 'Impact_I' && normalizedReasons['integrity']) row.description = normalizedReasons['integrity'];
+            else if (rowKey === 'Impact_A' && normalizedReasons['availability']) row.description = normalizedReasons['availability'];
+          });
+
+          // Refresh tooltips after DOM update
+          nextTick(() => {
+            refreshTooltips();
+          });
+        })
+        .catch(err => {
+          console.error('Error fetching TTP score reasons:', err);
+        });
+  }
+}
+
+const setExistTTPScores = (savedScores) => {
   if (Array.isArray(savedScores) && savedScores.length > 0) {
-    // 저장된 키-값을 기반으로 riskRows 업데이트
-    savedScores.forEach(savedItem => {
-      const target = riskRows.find(r => r.key === savedItem.key);
+
+    savedScores.forEach(scoreItem => {
+      const target = riskRows.find(r => r.key === scoreItem.key);
+
       if (target) {
-        target.value = savedItem.value;
-        target.weight = savedItem.weight;
+        // 값 업데이트
+        target.value = scoreItem.value;
+
+        // (선택 사항) 백엔드 쿼리에서 weight도 같이 보내주고 있으므로 필요하면 업데이트합니다.
+        if (scoreItem.weight !== undefined) {
+          target.weight = scoreItem.weight;
+        }
       }
     });
   }
-});
+};
+const fetchMitreTechniques = async () => {
+  try {
+    const res = await axios.get('/api/v1/mitre/techniques');
+    mitreTechniques.value = res.data;
+    // console.log('Fetched MITRE techniques:', mitreTechniques.value);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+// Tooltip Management
+let tooltipInstances = [];
+const refreshTooltips = () => {
+  // Dispose existing instances
+  tooltipInstances.forEach(t => t.dispose());
+  tooltipInstances = [];
+  
+  // Initialize new instances
+  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+  tooltipInstances = [...tooltipTriggerList].map(tooltipTriggerEl => new Tooltip(tooltipTriggerEl));
+};
+
+onMounted( () => {
+  init()
+  fetchMitreTechniques()
+  refreshTooltips()
+})
 
 watch(
     riskRows,

@@ -2,7 +2,7 @@
   <div class="card shadow-sm">
     <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center border-bottom-0 py-3">
       <span><i class="fa-solid fa-shield-virus me-2"></i>Threats</span>
-      <button class="btn btn-sm btn-outline-primary" @click="handleAddNewThreat" :disabled="!cellRef">
+      <button class="btn btn-sm btn-white border" @click="handleAddNewThreat" :disabled="!cellRef">
         <i class="fa-solid fa-plus"></i>
       </button>
     </div>
@@ -58,8 +58,11 @@
             </div>
           </div>
 
-          <div v-if="filteredThreats.length === 0" class="text-center py-4 text-muted small">
-            No {{ activeTab }} threats found.
+          <div v-if="filteredThreats.length === 0" class="text-center">
+            <div class="py-4 text-muted small">No {{ activeTab }} threats found.</div>
+            <button class="btn btn-sm btn-white" @click="handleGetThreat">
+              <i class="fa-solid fa-download"></i> Get Threats
+            </button>
           </div>
         </div>
       </div>
@@ -70,10 +73,13 @@
 <script setup>
 import { storeToRefs } from 'pinia';
 import { computed, ref } from 'vue'
-import { createNewThreat } from '@/service/threat/index.js';
+import {createNewThreat, createNewThreatWithMitre} from '@/service/threat/index.js';
 import { useCellStore } from "@/stores/cellStore.js"
 import { useThreatModelStore } from "@/stores/threatModelStore.js";
 import dataChanged from '@/service/x6/graph/data-changed.js';
+import axios from 'axios';
+import { useToast } from "vue-toastification";
+const toast = useToast();
 
 const cellStore = useCellStore();
 const tmStore = useThreatModelStore()
@@ -93,11 +99,70 @@ const handleAddNewThreat = () => {
 
   tmStore.increaseThreatCounter()
   tmStore.setModified() // Graph Modified 상태로 설정
-  cellStore.updateData(cellRef.value.data) // 스토어에 셀 데이터 업데이트
+  cellStore.updateData(cellRef.value.data, 'ThreatProperties.vue') // 스토어에 셀 데이터 업데이트
 
   dataChanged.updateStyleAttrs(cellRef.value) // 현재 stencil을 위협이 설정된 모양으로 변경
 
   emit('open-threat-edit-modal', newThreat.id, 'new')
+}
+
+const handleGetThreat = async () => {
+  console.log('[ThreatProperties] handleGetThreat clicked')
+  console.log('Current Cell Threats:', cellRef.value.data.name)
+  let assetName = cellRef.value.data.name
+  await axios.get(`/api/v1/mitre/threat/${assetName}`)
+      .then(res => {
+        const fetchedThreats = res.data
+        if (!fetchedThreats || fetchedThreats.length === 0) {
+          toast.error('Failed to fetch threats.', {
+            position: "bottom-right",
+            timeout: 2000,
+            closeOnClick: true,
+            pauseOnFocusLoss: true,
+            pauseOnHover: true,
+            draggable: true,
+            draggablePercent: 0.6,
+            showCloseButtonOnHover: false,
+            hideProgressBar: true,
+            closeButton: "button",
+            icon: true,
+            rtl: false
+          })
+          return
+        }
+
+        fetchedThreats.map(ft => {
+          const newThreat = createNewThreatWithMitre(ft, tmStore.data.threatCounter + 1)
+          newThreat.riskScore = calcRiskScore(newThreat.ttp_score)
+          cellRef.value.data.threats.push(newThreat)
+          tmStore.increaseThreatCounter()
+        })
+
+        cellRef.value.data.hasOpenThreats = cellRef.value.data.threats.length > 0
+        tmStore.setModified() // Graph Modified 상태로 설정
+        cellStore.updateData(cellRef.value.data, 'ThreatProperties.vue') // 스토어에 셀 데이터 업데이트
+
+        dataChanged.updateStyleAttrs(cellRef.value) // 현재 stencil을 위협이 설정된 모양으로 변경
+      })
+      .catch(err => {
+      console.error('Error fetching threats:', err)
+    })
+}
+
+const calcRiskScore = (ttp_score) => {
+  // ttp_score 예시: {key: 'proximity', value: 3, weight: 0.2}, ...
+
+  const reverseKeys = ['Required Skills', 'Required Resources', 'Stealth', 'Attribution'];
+
+  const sum = ttp_score.reduce((acc, item) => {
+    let val = item.value;
+    if (reverseKeys.includes(item.key)) {
+      val = 6 - val; // 역산
+    }
+    return acc + (val * item.weight);
+  }, 0);
+
+  return Math.round(sum * 10) / 10; // 소수점 1자리
 }
 
 const handleEditClick = (threatId) => {
@@ -149,5 +214,15 @@ const getBadgeClass = (riskScore) => {
 .list-group::-webkit-scrollbar-thumb {
   background-color: #dee2e6;
   border-radius: 4px;
+}
+
+.btn-white {
+  background-color: #ffffff;
+  color: #495057;
+  border-color: #dee2e6;
+}
+.btn-white:hover {
+  background-color: #f8f9fa;
+  border-color: #c6c7ca;
 }
 </style>
