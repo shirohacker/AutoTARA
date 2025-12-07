@@ -2,9 +2,20 @@
   <div class="card shadow-sm">
     <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center border-bottom-0 py-3">
       <span><i class="fa-solid fa-shield-virus me-2"></i>Threats</span>
-      <button class="btn btn-sm btn-white border" @click="handleAddNewThreat" :disabled="!cellRef">
-        <i class="fa-solid fa-plus"></i>
-      </button>
+      <div>
+        <button 
+          class="btn btn-sm btn-white border me-2" 
+          @click="sortRiskDesc = !sortRiskDesc" 
+          :class="{ 'text-primary': sortRiskDesc }"
+          :disabled="!cellRef"
+          title="Sort by Risk Score"
+        >
+          <i class="fa-solid fa-arrow-down-short-wide"></i>
+        </button>
+        <button class="btn btn-sm btn-white border" @click="handleAddNewThreat" :disabled="!cellRef">
+          <i class="fa-solid fa-plus"></i>
+        </button>
+      </div>
     </div>
 
     <div class="card-body">
@@ -87,6 +98,8 @@ const { ref: cellRef, threats } = storeToRefs(cellStore);
 
 const activeTab = ref('open')
 
+const sortRiskDesc = ref(false)
+
 const emit = defineEmits(['open-threat-edit-modal'])
 
 const openCount = computed(() => threats.value.filter(t => t.status !== 'mitigated').length)
@@ -114,20 +127,7 @@ const handleGetThreat = async () => {
       .then(res => {
         const fetchedThreats = res.data
         if (!fetchedThreats || fetchedThreats.length === 0) {
-          toast.error('Failed to fetch threats.', {
-            position: "bottom-right",
-            timeout: 2000,
-            closeOnClick: true,
-            pauseOnFocusLoss: true,
-            pauseOnHover: true,
-            draggable: true,
-            draggablePercent: 0.6,
-            showCloseButtonOnHover: false,
-            hideProgressBar: true,
-            closeButton: "button",
-            icon: true,
-            rtl: false
-          })
+          toast.error(`No threats found in the database for ${assetName}`);
           return
         }
 
@@ -170,9 +170,14 @@ const handleEditClick = (threatId) => {
 }
 
 const filteredThreats = computed(() => {
-  return threats.value.filter(t => activeTab.value === 'open'
+  const result = threats.value.filter(t => activeTab.value === 'open'
       ? t.status !== 'mitigated'
       : t.status === 'mitigated')
+  
+  if (sortRiskDesc.value) {
+    return result.sort((a, b) => (b.riskScore || 0) - (a.riskScore || 0))
+  }
+  return result
 })
 
 const getBadgeClass = (riskScore) => {

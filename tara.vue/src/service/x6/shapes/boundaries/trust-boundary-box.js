@@ -7,22 +7,21 @@ export const TrustBoundaryBox = Shape.Rect.define({
     constructorName: name,
     width: 500,
     height: 400,
-    zIndex: -50,
+    zIndex: -1,
     attrs: {
         body: {
-            // rx: 10,
-            // ry: 10,
-            strokeWidth: 2,
+            rx: 10,
+            ry: 10,
+            strokeWidth: 3,
             strokeDasharray: '10 5',
-            stroke: '#FF0000', // red
-            fill: 'transparent',
-            fillOpacity: 0
+            stroke: '#333333',
+            fill: 'transparent'
         },
         label: {
             text: '',
-            textAnchor : 'bottom',
-            textVerticalAnchor : 'top',
-            refX: '5%',
+            textAnchor: 'bottom',
+            textVerticalAnchor: 'top',
+            refX: '15%',
             refY: '12'
         }
     }
@@ -34,7 +33,12 @@ TrustBoundaryBox.prototype.setName = function (name) {
     this.setAttrByPath('label/text', name);
 };
 
-TrustBoundaryBox.prototype.updateStyle = function () {};
+TrustBoundaryBox.prototype.updateStyle = function (color, dash, strokeWidth) {
+    this.setAttrByPath('body/stroke', color || '#333333');
+    this.setAttrByPath('body/strokeWidth', strokeWidth || 3);
+    this.setAttrByPath('body/strokeDasharray', '10 5');
+    this.setAttrByPath('body/fill', 'transparent');
+};
 
 export default {
     name,

@@ -171,7 +171,11 @@ const updateStyleAttrs = (cell) => {
         // Ideally we should revert to default fill, e.g. white or transparent.
         // Assuming default is white or defined elsewhere.
         if (cell.isNode && cell.isNode()) {
-            cell.setAttrByPath('body/fill', '#FFFFFF'); // Or original default
+            // TrustBoundaryBox should remain transparent and preserve its stroke
+            // TrustBoundaryBox should remain transparent
+            if (cell.shape !== 'trust-boundary-box') {
+                cell.setAttrByPath('body/fill', '#FFFFFF'); // Or original default
+            }
         }
     }
 
@@ -207,7 +211,7 @@ const updateProperties = async (cell) => {
         if (cell.data && cell.data.description) {
             console.log('Updated properties for cell: ' + cell.getData().name);
         } else {
-            if (cell.isEdge()) {
+            if (cell.isEdge() && cell.shape !== 'trust-boundary-curve' && cell.shape !== 'trust-broundary-curve') {
                 cell.type = 'tm.Flow';
                 console.log('Edge cell given type: ' + cell.type);
             }

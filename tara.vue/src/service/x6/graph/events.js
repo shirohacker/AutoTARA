@@ -102,7 +102,7 @@ const cellAdded = (graph) => ({ cell }) => {
 
     // boundary boxes must not overlap other diagram components
     if (cell.shape === 'trust-boundary-box') {
-        cell.zIndex = -1;
+        cell.setZIndex(-1);
     }
 
     cellStore.select(cell);
