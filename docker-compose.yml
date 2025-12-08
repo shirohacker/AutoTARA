@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:17
+    container_name: tara_db
+    restart: always
+    environment:
+      POSTGRES_USER: sane
+      POSTGRES_PASSWORD: sanelab2025
+      POSTGRES_DB: tara_db
+    volumes:
+      - ./db/init:/docker-entrypoint-initdb.d
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend:
+    build: ./tara.server
+    container_name: tara_backend
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=sane
+      - DB_PASSWORD=sanelab2025
+      - DB_NAME=tara_db
+    depends_on:
+      - db
+
+  frontend:
+    build: ./tara.vue
+    container_name: tara_frontend
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:

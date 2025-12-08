@@ -4,7 +4,7 @@ services:
     container_name: tara-pg17
     environment:
       POSTGRES_USER: sane
-      POSTGRES_PASSWORD: qhqnsvud2025
+      POSTGRES_PASSWORD: sanelab2025
       POSTGRES_DB: tara_db            # 컨테이너 초기화 시 자동 생성됨
       TZ: Asia/Seoul
     ports:
