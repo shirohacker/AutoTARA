@@ -19,11 +19,6 @@ AutoTARA (Automated Threat Analysis and Risk Assessment) is a comprehensive web-
 
 ## 🔍 Preview
 
-### 🏠 Home
-<div align="center">
-  <img src="./example/main-page.png" alt="Main Page" width="100%" />
-</div>
-
 ### 🧩 Visual Threat Modeling
 <div align="center">
   <img src="./example/diagram-sample.png" alt="Threat Modeling" width="100%" />
