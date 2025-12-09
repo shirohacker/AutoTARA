@@ -12,13 +12,17 @@ COPY . .
 # Build with VITE_API_URL set to point to localhost:4000 (standard for local docker-compose where browser accesses backend)
 ENV VITE_API_URL=http://localhost:4000/api
 
-RUN npm run build
+EXPOSE 1234
+
+# RUN npm run build
+
+CMD ["npm", "run", "dev"]
 
 # Production Stage
-FROM nginx:alpine
+# FROM nginx:alpine
 
-COPY --from=builder /app/dist /usr/share/nginx/html
+# COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 80
+# EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# CMD ["nginx", "-g", "daemon off;"]
