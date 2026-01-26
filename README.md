@@ -15,7 +15,7 @@
   </div>
 </div>
 
-AutoTARA (Automated Threat Analysis and Risk Assessment) is a comprehensive web-based tool designed to streamline the process of threat modeling and risk assessment for automotive cybersecurity. It empowers users to visualize system architectures, identify potential threats, simulate attack vectors, and conduct rigorous risk assessments.
+AutoTARA (Automated Threat Assessment and Remediation Analysis) is a comprehensive web-based tool designed to streamline the process of threat modeling and risk assessment for automotive cybersecurity. It empowers users to visualize system architectures, identify potential threats, simulate attack vectors, and conduct rigorous risk assessments.
 
 ## 🔍 Preview
 
