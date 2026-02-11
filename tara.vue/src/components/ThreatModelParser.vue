@@ -1,6 +1,6 @@
 <template>
   <div>
-    <button class="btn btn-primary btn-lg px-4 me-sm-3" @click="openFileDialog">
+    <button class="btn btn-primary btn-lg px-4" @click="openFileDialog">
       <i class="fa-solid fa-arrow-up-from-bracket"></i>
       Open Diagram
     </button>

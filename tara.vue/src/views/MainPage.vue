@@ -17,6 +17,7 @@
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
         <ThreatModelParser />
+        <MalModelParser />
         <button class="btn btn-outline-secondary btn-lg px-4" @click="openCreateDiagramModal">
           <i class="fa-solid fa-plus"></i>
           New Diagram
@@ -44,6 +45,7 @@
 import { ref } from 'vue'
 import CreateDiagramModal from '@/components/CreateDiagramModal.vue'
 import ThreatModelParser from '@/components/ThreatModelParser.vue'
+import MalModelParser from '@/components/MalModelParser.vue'
 
 const createModal = ref(null)
 

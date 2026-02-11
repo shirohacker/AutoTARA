@@ -1,9 +1,23 @@
 <template>
-  <Graph />
+  <div class="diagram-view-wrapper">
+    <!-- Graph Component -->
+    <Graph />
+
+    <!-- Simulation Loading Overlay (Only covers DiagramView) -->
+    <div v-if="isSimulating" class="diagram-loading-overlay">
+      <div class="d-flex flex-column align-items-center p-4 bg-white rounded shadow-sm border">
+        <div class="spinner-border text-primary mb-2" role="status" style="width: 2.5rem; height: 2.5rem;">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+        <h6 class="fw-bold text-dark m-0">Running Simulation...</h6>
+        <small class="text-muted mt-1">Please wait for analysis</small>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
-import Graph from '@/components/Graph.vue';
+import Graph from '@/components/Graph.vue'; // .js가 아니라 .vue여야 함
 
 import { onBeforeRouteLeave, onBeforeRouteUpdate } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -12,7 +26,7 @@ import { useCellStore } from "@/stores/cellStore.js";
 
 const tmStore = useThreatModelStore()
 const cellStore = useCellStore()
-const { modelChanged } = storeToRefs(tmStore) // getters.modelChanged 사용
+const { modelChanged, isSimulating } = storeToRefs(tmStore) // getters.modelChanged 사용
 
 // 공통 확인 함수
 const confirmLeave = () => {
@@ -51,3 +65,25 @@ onBeforeRouteUpdate((to, from) => {
   }
 })
 </script>
+
+<style scoped>
+.diagram-view-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.diagram-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(2px);
+  z-index: 999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+</style>

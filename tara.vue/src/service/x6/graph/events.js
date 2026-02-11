@@ -38,15 +38,22 @@ const edgeConnected = (graph) => ({ edge }) => {
     }
 };
 
-const mouseLeave = ({ cell }) => {
-    // 지워야 할 툴 목록
-    const toolsToRemove = ['boundary', 'button-remove', 'vertices', 'source-arrowhead', 'target-arrowhead'];
+// 모든 cell의 hover tools를 정리하는 헬퍼 함수
+const clearAllHoverTools = (graph) => {
+    if (!graph) return;
 
-    toolsToRemove.forEach(tool => {
-        if (cell.hasTool(tool)) {
-            cell.removeTool(tool);
-        }
+    const cells = graph.getCells();
+    cells.forEach(cell => {
+        // 모든 hover 관련 tools 제거
+        cell.removeTools();
     });
+    showPorts(false);
+};
+
+const mouseLeave = ({ cell }) => {
+    // 모든 hover 관련 tools를 한번에 제거
+    // 개별적으로 제거하는 대신 removeTools()를 사용하여 더 확실하게 제거
+    cell.removeTools();
 
     // [중요] 여기서는 entry-marker-tool과 target-marker-tool을 지우지 않습니다.
     // 따라서 마우스가 떠나도 마커는 계속 남아있게 됩니다.
@@ -202,6 +209,10 @@ const listen = (graph) => {
     graph.on('cell:selected', cellSelected(graph));
     graph.on('cell:unselected', cellUnselected);
     graph.on('node:move', cellSelected);
+
+    // 빈 공간 클릭/마우스다운 시 모든 hover tools 정리
+    graph.on('blank:click', () => clearAllHoverTools(graph));
+    graph.on('blank:mousedown', () => clearAllHoverTools(graph));
 };
 
 const removeListeners = (graph) => {
@@ -218,6 +229,10 @@ const removeListeners = (graph) => {
     graph.off('cell:selected', cellSelected(graph));
     graph.off('cell:unselected', cellUnselected);
     graph.off('node:move', cellSelected);
+
+    // 빈 공간 이벤트 제거
+    graph.off('blank:click');
+    graph.off('blank:mousedown');
 };
 
 export default {
