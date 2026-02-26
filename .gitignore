@@ -1,1 +1,11 @@
 /.idea/
+/tara.server/node_modules
+/tara.vue/node_modules
+/MAL/
+/mal-dsl/
+/test/
+/tara.server/.idea/
+/tara.server/temp/
+/tara.vue/.idea/
+CLAUDE.md
+/mal-simulator/

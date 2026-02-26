@@ -2,6 +2,7 @@ import { createWebHistory, createRouter } from 'vue-router'
 
 import MainPageView from '@/views/MainPage.vue'
 import DiagramView from '@/views/DiagramView.vue'
+import DashboardView from '@/views/DashboardView.vue'
 import TestComponent from '@/components/TestComponents.vue'
 import { useThreatModelStore } from "@/stores/threatModelStore.js";
 
@@ -24,6 +25,7 @@ const routes = [
             next()
         }
     },
+    { path: '/dashboard', component: DashboardView, name: 'Dashboard' },
     { path: '/test', component: TestComponent },    // todo: TEST 라우터 제거 필요
 ]
 

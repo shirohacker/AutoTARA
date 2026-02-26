@@ -30,7 +30,10 @@
       <div class="mb-2">
         <ElementProperties />
       </div>
-      <ThreatProperties @open-threat-edit-modal="showThreatEditModal" />
+      <div class="mb-2">
+        <ThreatProperties @open-threat-edit-modal="showThreatEditModal" />
+      </div>
+      <SimulationResult />
     </div>
 
     <div>
@@ -47,6 +50,7 @@ import ElementProperties from "@/components/ElementProperties.vue";
 import GraphButtonView from "@/views/GraphButtonView.vue";
 import ThreatProperties from "@/components/ThreatProperties.vue";
 import ThreatEditModal from "@/components/ThreatEditModal.vue";
+import SimulationResult from "@/components/SimulationResult.vue";
 import { useThreatModelStore } from '@/stores/threatModelStore.js';
 import {useCellStore} from "@/stores/cellStore.js";
 import axios from "axios";

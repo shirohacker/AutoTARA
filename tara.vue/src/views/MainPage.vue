@@ -17,10 +17,15 @@
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
         <ThreatModelParser />
+        <MalModelParser />
         <button class="btn btn-outline-secondary btn-lg px-4" @click="openCreateDiagramModal">
           <i class="fa-solid fa-plus"></i>
           New Diagram
         </button>
+        <router-link to="/dashboard" class="btn btn-outline-primary btn-lg px-4">
+          <i class="fa-solid fa-chart-line"></i>
+          Dashboard
+        </router-link>
       </div>
     </div>
     <div class="overflow-hidden" style="max-height: 45vh">
@@ -44,6 +49,7 @@
 import { ref } from 'vue'
 import CreateDiagramModal from '@/components/CreateDiagramModal.vue'
 import ThreatModelParser from '@/components/ThreatModelParser.vue'
+import MalModelParser from '@/components/MalModelParser.vue'
 
 const createModal = ref(null)
 

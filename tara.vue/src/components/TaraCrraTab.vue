@@ -232,10 +232,9 @@ watch(selectedCMs, (newVal) => {
 
 const allCMs = ref([
   // Sample data to make sure M1048, M1050, M1030 are available for testing even if API fails or doesn't have them
-  { id: 'M1048', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-  { id: 'M1050', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-  { id: 'M1030', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' },
-  { id: 'M1036', name: 'Account Use Policies', description: 'Configure features related to account use like login attempt lockouts, specific login times, etc.' }
+  { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
+  { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
+  { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' },
 ]);
 
 const filteredCMs = computed(() => {
@@ -284,9 +283,9 @@ const getMitreCMsByThreatId = async (mitreId) => {
     
     // Ensure our demo items are in the list for the user to see
     const demoItems = [
-      { id: 'M1048', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-      { id: 'M1050', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-      { id: 'M1030', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
+      { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
+      { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
+      { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
     ];
 
     // Simple merge: add demo items if they don't exist in map
@@ -310,9 +309,9 @@ const getAllMitreCMs = async () => {
      // Merge logic similiar to above
     const apiData = res.data;
     const demoItems = [
-      { id: 'M1048', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-      { id: 'M1050', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-      { id: 'M1030', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
+      { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
+      { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
+      { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
     ];
     
     const combined = [...apiData];

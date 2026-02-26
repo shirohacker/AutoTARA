@@ -18,6 +18,14 @@
       </button>
       <ul class="dropdown-menu">
         <li>
+          <button class="dropdown-item" @click="startMalsimHandler" :disabled="!canRunMalsim">
+            <i class="fa-solid fa-play me-2"></i>Run malsim
+            <span v-if="!tmStore.malModel || !tmStore.malLangspec" class="text-muted small ms-2">(Upload MAL first)</span>
+            <span v-else-if="!tmStore.entryThreat || !tmStore.targetThreat" class="text-muted small ms-2">(Set Entry and Target)</span>
+          </button>
+        </li>
+        <li><hr class="dropdown-divider"></li>
+        <li>
           <button class="dropdown-item" @click="startTTCHandler">
             <i class="fa-solid fa-clock me-2 text-muted"></i>Time To Compromise (TTC)
           </button>
@@ -33,6 +41,18 @@
       </button>
     </div>
   </div>
+  
+  <!-- Threat Select Modal -->
+  <ThreatSelectModal
+    :show="showThreatModal"
+    :mode="threatModalMode"
+    :nodeId="threatModalNodeId"
+    :nodeName="threatModalNodeName"
+    :nodeType="threatModalNodeType"
+    :threats="threatModalThreats"
+    @confirm="onThreatSelected"
+    @cancel="closeThreatModal"
+  />
 </template>
 
 <script setup>
@@ -40,15 +60,31 @@ import { useCellStore } from '@/stores/cellStore.js';
 import { useThreatModelStore } from "@/stores/threatModelStore.js";
 import { storeToRefs } from "pinia";
 import dataChanged from '@/service/x6/graph/data-changed.js';
-import { ref, onMounted, onUnmounted, inject, toRaw } from 'vue';
+import { ref, computed, onMounted, onUnmounted, inject, toRaw } from 'vue';
 import { Dropdown } from 'bootstrap';
 import { useToast } from "vue-toastification";
+import ThreatSelectModal from './ThreatSelectModal.vue';
+import { runSimulation as runMalsimApi } from '@/service/mal/malApiService.js';
 
 const cellStore = useCellStore();
 const tmStore = useThreatModelStore();
+const { isSimulating } = storeToRefs(tmStore);
 const { ref: cellRef } = storeToRefs(cellStore);
 const toast = useToast();
 const graph = inject('graph');
+
+// --- Threat Modal State ---
+const showThreatModal = ref(false);
+const threatModalMode = ref('entry'); // 'entry' or 'target'
+const threatModalNodeId = ref('');
+const threatModalNodeName = ref('');
+const threatModalNodeType = ref('');
+const threatModalThreats = ref([]);
+
+// malsim 실행 가능 여부
+const canRunMalsim = computed(() => {
+  return tmStore.malModel && tmStore.malLangspec && tmStore.entryThreat && tmStore.targetThreat;
+});
 
 const dropdownToggleRef = ref(null);
 let dropdown = null;
@@ -257,8 +293,6 @@ const findAllShortestPaths = (model, startId, targetId, weightType) => {
   };
 };
 
-const isSimulating = ref(false);
-
 /**
  * Common Logic to run simulation
  */
@@ -308,6 +342,8 @@ const runSimulation = (weightType) => {
             }
 
             // Save to Store for Report
+            // malsim 결과 초기화
+            tmStore.malsimResult = null;
             tmStore.simulationResult = {
                 paths: result.paths,
                 totalCost: result.totalCost,
@@ -372,13 +408,350 @@ const runSimulation = (weightType) => {
 };
 
 const startTTCHandler = () => {
+    if (dropdown) dropdown.hide(); // 드롭다운 닫기
     console.log("Starting TTC Analysis...");
     runSimulation('ttc');
 };
 
 const startEdgeHandler = () => {
+    if (dropdown) dropdown.hide(); // 드롭다운 닫기
     console.log("Starting Edge Path Analysis...");
     runSimulation('edge');
+};
+
+// --- malsim 시뮬레이션 핸들러 ---
+const startMalsimHandler = async () => {
+    if (dropdown) dropdown.hide(); // 드롭다운 닫기
+    
+    if (!canRunMalsim.value) {
+        if (!tmStore.malModel || !tmStore.malLangspec) {
+            toast.error('Please upload MAL model first');
+        } else if (!tmStore.entryThreat) {
+            toast.error('Please select Entry threat');
+        } else if (!tmStore.targetThreat) {
+            toast.error('Please select Target threat');
+        }
+        return;
+    }
+    
+    isSimulating.value = true;
+    
+    // 이전 결과 초기화
+    tmStore.simulationResult = null;
+    let sessionId = null;
+    
+    try {
+        // Entry/Target 형식: "AssetName:attackStep"
+        const entryPoint = `${tmStore.entryThreat.nodeName}:${tmStore.entryThreat.technique}`;
+        const goal = `${tmStore.targetThreat.nodeName}:${tmStore.targetThreat.technique}`;
+        
+        console.log(`[malsim] Running simulation: ${entryPoint} -> ${goal}`);
+        
+        // 1. 시뮬레이션 시작 (sessionId 받기)
+        // 원본 파일(.mar, .json)을 전송해야 함
+        if (!tmStore.malMarFile || !tmStore.malModelFile) {
+             throw new Error("Missing original MAL files. Please re-upload the MAL model.");
+        }
+
+        const startResult = await runMalsimApi(
+            entryPoint,
+            goal,
+            tmStore.malMarFile,
+            tmStore.malModelFile,
+            {
+                seed: 42,
+                ttcMode: 0
+            }
+        );
+        
+        sessionId = startResult.sessionId;
+        console.log(`[malsim] Simulation started. Session ID: ${sessionId}`);
+        // toast.info(`Simulation started. Waiting for completion...`);
+        
+        // 2. 폴링으로 상태 확인
+        const maxWaitTime = 60000; // 최대 60초
+        const pollInterval = 3000; // 3초마다 확인
+        const startTime = Date.now();
+        
+        let status = 'pending';
+        
+        while (status === 'pending' || status === 'running') {
+            // 타임아웃 확인
+            if (Date.now() - startTime > maxWaitTime) {
+                throw new Error('Simulation timeout. Please check the Python server logs.');
+            }
+            
+            // 3초 대기
+            await new Promise(resolve => setTimeout(resolve, pollInterval));
+            
+            // 상태 조회
+            const statusData = await import('@/service/mal/malApiService.js')
+                .then(module => module.getSimulationStatus(sessionId));
+            
+            status = statusData.status;
+            console.log(`[malsim] Status: ${status}`);
+            
+            if (status === 'failed') {
+                throw new Error('Simulation failed on the server');
+            }
+        }
+        
+        // 3. 완료 후 결과 조회
+        if (status === 'completed') {
+            const resultData = await import('@/service/mal/malApiService.js')
+                .then(module => module.getSimulationResult(sessionId));
+            
+            console.log('[malsim] Result:', resultData);
+            
+            // 결과 객체 구조:
+            // {
+            //   session_id: string,
+            //   status: "completed",
+            //   result: {
+            //     attack_path_found: boolean,
+            //     attack_paths: {
+            //       "Attacker": {
+            //         "GoalNode:attackStep": [
+            //           { id, name, full_name, type },
+            //           ...
+            //         ]
+            //       }
+            //     }
+            //   }
+            // }
+            
+            const result = resultData.result || {};
+            const attackPathFound = result.attack_path_found || false;
+            const attackPaths = result.attack_paths || {};
+            
+            if (!attackPathFound) {
+                toast.warning('No attack path found. The goal might not be reachable from the entry point.');
+                return;
+            }
+            
+            // 공격 경로를 store에 저장
+            tmStore.malsimResult = {
+                sessionId,
+                attackPathFound,
+                attackPaths,
+                rawResult: resultData
+            };
+            
+            // 공격 경로 시각화
+            visualizeMalsimResult(attackPaths);
+            
+            // 공격 경로 개수 계산
+            let totalPaths = 0;
+            let maxSteps = 0;
+            
+            Object.values(attackPaths).forEach(agentPaths => {
+                Object.values(agentPaths).forEach(goalPaths => {
+                    const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+                    paths.forEach(path => {
+                        totalPaths++;
+                        maxSteps = Math.max(maxSteps, path.length);
+                    });
+                });
+            });
+            
+            toast.success(`Attack path found! ${totalPaths} path(s), max ${maxSteps} steps.`);
+        }
+        
+    } catch (error) {
+        console.error('[malsim] Error:', error);
+        toast.error(error.message || 'Failed to run malsim simulation');
+    } finally {
+        isSimulating.value = false;
+    }
+};
+
+// malsim 결과 시각화
+const visualizeMalsimResult = (attackPaths) => {
+    let model = null;
+    if (graph && graph.value) {
+        model = toRaw(graph.value);
+    } else if (cellRef.value && cellRef.value.model) {
+        model = cellRef.value.model;
+    }
+    
+    if (!model) return;
+    
+    // 이전 공격 경로 초기화
+    clearAttackPath(model);
+    
+    // 공격 경로에 포함된 자산 이름 추출
+    // attackPaths 구조: { "Attacker": { "Goal:step": [{ full_name: "Asset:step", ... }] } }
+    const attackedAssets = new Set();
+    
+    Object.values(attackPaths).forEach(agentPaths => {
+        Object.values(agentPaths).forEach(goalPaths => {
+            const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+            paths.forEach(pathNodes => {
+                pathNodes.forEach(node => {
+                    // full_name: "AssetName:attackStep" 형식
+                    // 자산 이름만 추출 (콜론 앞부분)
+                    if (node && node.full_name) {
+                        const assetName = node.full_name.split(':')[0];
+                        attackedAssets.add(assetName);
+                    }
+                });
+            });
+        });
+    });
+    
+    console.log('[malsim] Attacked assets:', Array.from(attackedAssets));
+    
+    // 모든 노드 순회하며 공격 경로에 포함된 노드 하이라이트
+    const nodes = model.getNodes();
+    nodes.forEach(node => {
+        const data = node.getData() || {};
+        const nodeName = data.name;
+        
+        if (attackedAssets.has(nodeName)) {
+            node.setData({ isAttackPath: true }, { merge: true, skipSelection: true });
+            dataChanged.updateStyleAttrs(node);
+        }
+    });
+
+    // 엣지 하이라이트: 공격 경로 상의 인접한 자산 사이의 엣지를 찾음
+    const edges = model.getEdges();
+    
+    Object.values(attackPaths).forEach(agentPaths => {
+        Object.values(agentPaths).forEach(goalPaths => {
+            const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+            paths.forEach(pathNodes => {
+                for (let i = 0; i < pathNodes.length - 1; i++) {
+                    if (!pathNodes[i] || !pathNodes[i].full_name || !pathNodes[i+1] || !pathNodes[i+1].full_name) continue;
+                    
+                    const currentAsset = pathNodes[i].full_name.split(':')[0];
+                    const nextAsset = pathNodes[i+1].full_name.split(':')[0];
+                    
+                    if (currentAsset === nextAsset) continue; // 같은 자산 내 이동은 엣지 하이라이트 스킵
+                    
+                    // 그래프에서 두 자산 이름에 해당하는 노드 ID 찾기
+                    const currentNode = nodes.find(n => n.getData()?.name === currentAsset);
+                    const nextNode = nodes.find(n => n.getData()?.name === nextAsset);
+                    
+                    if (currentNode && nextNode) {
+                        const currentId = currentNode.id;
+                        const nextId = nextNode.id;
+                        
+                        // 두 노드 사이의 엣지 찾기 (방향 무관하게 연결된 엣지 하이라이트)
+                        const connectedEdges = edges.filter(edge => {
+                            const source = edge.getSourceCellId();
+                            const target = edge.getTargetCellId();
+                            return (source === currentId && target === nextId) || 
+                                   (source === nextId && target === currentId);
+                        });
+                        
+                        connectedEdges.forEach(edge => {
+                            const data = edge.getData() || {};
+                            if (!data.isAttackPath) {
+                                edge.setData({ isAttackPath: true }, { merge: true, skipSelection: true });
+                                dataChanged.updateStyleAttrs(edge);
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+};
+
+// --- Threat Modal 함수들 ---
+const openThreatModal = (mode, node) => {
+    const data = node.getData() || {};
+    
+    threatModalMode.value = mode;
+    threatModalNodeId.value = node.id;
+    threatModalNodeName.value = data.name || node.id;
+    threatModalNodeType.value = data.malInfo?.assetType || data.type || 'Unknown';
+    threatModalThreats.value = (data.threats || []).filter(t => t.status === 'open');
+    
+    if (threatModalThreats.value.length === 0) {
+        toast.warning("This node has no open threats");
+        return;
+    }
+    
+    showThreatModal.value = true;
+};
+
+const closeThreatModal = () => {
+    showThreatModal.value = false;
+};
+
+const onThreatSelected = (selection) => {
+    // selection: { nodeId, nodeName, threatId, technique, ttc }
+    const mode = threatModalMode.value;
+    
+    if (mode === 'entry') {
+        tmStore.entryThreat = selection;
+        tmStore.entryNode = selection.nodeId;
+        // Target과 같은 노드면 Target 해제
+        if (tmStore.targetNode === selection.nodeId) {
+            tmStore.targetNode = null;
+            tmStore.targetThreat = null;
+        }
+    } else {
+        tmStore.targetThreat = selection;
+        tmStore.targetNode = selection.nodeId;
+        // Entry와 같은 노드면 Entry 해제
+        if (tmStore.entryNode === selection.nodeId) {
+            tmStore.entryNode = null;
+            tmStore.entryThreat = null;
+        }
+    }
+    
+    // 노드 스타일 업데이트
+    updateNodeStyles(selection.nodeId, mode);
+    
+    closeThreatModal();
+    toast.success(`${mode === 'entry' ? 'Entry' : 'Target'} set: ${selection.nodeName}:${selection.technique}`);
+    tmStore.setModified();
+};
+
+// 노드 스타일 업데이트 (Entry/Target 표시)
+const updateNodeStyles = (nodeId, mode) => {
+    let model = null;
+    if (graph && graph.value) {
+        model = toRaw(graph.value);
+    } else if (cellRef.value && cellRef.value.model) {
+        model = cellRef.value.model;
+    }
+    
+    if (!model) return;
+    
+    const nodes = model.getNodes();
+    nodes.forEach(node => {
+        const data = node.getData() || {};
+        const isSelectedNode = node.id === nodeId;
+        
+        let nextIsEntry = data.isEntry || false;
+        let nextIsTarget = data.isTarget || false;
+        
+        if (isSelectedNode) {
+            if (mode === 'entry') {
+                nextIsEntry = true;
+                nextIsTarget = false;
+            } else {
+                nextIsTarget = true;
+                nextIsEntry = false;
+            }
+        } else {
+            // 다른 노드에서 같은 역할 해제
+            if (mode === 'entry' && data.isEntry) {
+                nextIsEntry = false;
+            }
+            if (mode === 'target' && data.isTarget) {
+                nextIsTarget = false;
+            }
+        }
+        
+        if (nextIsEntry !== data.isEntry || nextIsTarget !== data.isTarget) {
+            node.setData({ isEntry: nextIsEntry, isTarget: nextIsTarget }, { merge: true, skipSelection: true });
+            dataChanged.updateStyleAttrs(node);
+        }
+    });
 };
 
 // --- 1. Entry 설정 핸들러 ---
@@ -387,6 +760,15 @@ const setEntryHandler = () => {
 
   const selectedNode = cellRef.value;
   const currentData = selectedNode.getData() || {};
+  
+  // malsim용: 위협이 있으면 모달 열기
+  const threats = (currentData.threats || []).filter(t => t.status === 'open');
+  if (threats.length > 0 && tmStore.malModel) {
+    openThreatModal('entry', selectedNode);
+    return;
+  }
+  
+  // 기존 Entry 설정 로직 (malsim 없을 때)
   const newIsEntry = !currentData.isEntry;
 
   const model = selectedNode.model;
@@ -443,6 +825,15 @@ const setTargetHandler = () => {
 
   const selectedNode = cellRef.value;
   const currentData = selectedNode.getData() || {};
+  
+  // malsim용: 위협이 있으면 모달 열기
+  const threats = (currentData.threats || []).filter(t => t.status === 'open');
+  if (threats.length > 0 && tmStore.malModel) {
+    openThreatModal('target', selectedNode);
+    return;
+  }
+  
+  // 기존 Target 설정 로직 (malsim 없을 때)
   const newIsTarget = !currentData.isTarget;
 
   const model = selectedNode.model;
@@ -547,7 +938,7 @@ const resetHandler = () => {
 .toolbar-container {
   background-color: #f8f9fa; /* Bootstrap bg-light color */
 }
-/* 구분선 */
+  /* 구분선 */
 .vr {
   align-self: center;
   height: 24px;

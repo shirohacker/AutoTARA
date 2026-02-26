@@ -43,6 +43,15 @@
       </button>
     </div>
 
+    <button
+      type="button"
+      class="btn btn-sm btn-white border"
+      title="Auto Layout"
+      @click="applyHierarchicalLayout"
+    >
+    <i class="fa-solid fa-diagram-project"></i>
+    </button>
+
     <button type="button" class="btn btn-sm btn-white border shadow-sm text-danger" title="Delete Selected" @click="deleteHandler" :disabled="!cellStore.hasSelected">
       <i class="fa-solid fa-trash"></i>
     </button>
@@ -67,7 +76,7 @@
 </template>
 
 <script setup>
-import { inject, ref, onMounted, watch } from 'vue';
+import { inject, ref, onMounted, onUnmounted, watch } from 'vue';
 import { useThreatModelStore } from '@/stores/threatModelStore.js';
 import { useCellStore } from '@/stores/cellStore.js';
 import SimulationReportModal from './SimulationReportModal.vue';
@@ -92,6 +101,16 @@ const openReportHandler = () => {
 // File input ref
 const fileInput = ref(null);
 
+// Layout Dropdown State
+const showLayoutDropdown = ref(false);
+const layoutDropdownRef = ref(null);
+
+const closeLayoutDropdown = (event) => {
+  if (layoutDropdownRef.value && !layoutDropdownRef.value.contains(event.target)) {
+    showLayoutDropdown.value = false;
+  }
+};
+
 // Undo/Redo state
 const canUndo = ref(false);
 const canRedo = ref(false);
@@ -102,6 +121,12 @@ onMounted(() => {
     setupGraphListeners(graph.value);
     updateHistoryState();
   }
+  // 외부 클릭 감지를 위한 이벤트 리스너
+  document.addEventListener('click', closeLayoutDropdown);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', closeLayoutDropdown);
 });
 
 // Watch for graph instance changes
@@ -211,6 +236,146 @@ const screenshotHandler = () => {
     link.href = dataUri;
     link.click();
   }, { backgroundColor: '#ffffff', padding: 10 });
+};
+
+// --- Layout Operations ---
+
+/**
+ * 레이아웃 적용 후 엣지 라우팅 최적화
+ * 엣지가 겹치지 않도록 곡선 처리
+ */
+const optimizeEdgeRouting = () => {
+  if (!graph.value) return;
+  
+  const edges = graph.value.getEdges();
+  const edgesByPair = new Map(); // 같은 노드 쌍의 엣지들을 그룹화
+  
+  // 엣지들을 노드 쌍으로 그룹화
+  edges.forEach(edge => {
+    const sourceId = edge.getSourceCellId();
+    const targetId = edge.getTargetCellId();
+    if (!sourceId || !targetId) return;
+    
+    const pairKey = [sourceId, targetId].sort().join('-');
+    if (!edgesByPair.has(pairKey)) {
+      edgesByPair.set(pairKey, []);
+    }
+    edgesByPair.get(pairKey).push(edge);
+  });
+  
+  // 같은 노드 쌍에 여러 엣지가 있으면 오프셋 적용
+  edgesByPair.forEach((pairEdges, pairKey) => {
+    if (pairEdges.length > 1) {
+      pairEdges.forEach((edge, index) => {
+        const offset = (index - (pairEdges.length - 1) / 2) * 30;
+        edge.setConnector('smooth', {});
+        // 라벨 위치 조정
+        edge.setLabels([{
+          attrs: { label: edge.getLabels()[0]?.attrs?.label || {} },
+          position: { distance: 0.5, offset: offset }
+        }]);
+      });
+    } else {
+      // 단일 엣지는 rounded 커넥터 사용
+      pairEdges[0].setConnector('rounded', { radius: 20 });
+    }
+  });
+};
+
+/**
+ * Hierarchical Layout: 계층적 트리 구조로 정렬 (BFS 기반)
+ */
+const applyHierarchicalLayout = () => {
+  if (!graph.value) return;
+
+  const nodes = graph.value.getNodes();
+  const edges = graph.value.getEdges();
+  if (nodes.length === 0) return;
+
+  // 인접 리스트 생성
+  const adjacency = new Map();
+  const inDegree = new Map();
+  
+  nodes.forEach(node => {
+    adjacency.set(node.id, []);
+    inDegree.set(node.id, 0);
+  });
+
+  edges.forEach(edge => {
+    const sourceId = edge.getSourceCellId();
+    const targetId = edge.getTargetCellId();
+    if (sourceId && targetId && adjacency.has(sourceId)) {
+      adjacency.get(sourceId).push(targetId);
+      inDegree.set(targetId, (inDegree.get(targetId) || 0) + 1);
+    }
+  });
+
+  // 루트 노드 찾기 (들어오는 엣지가 없는 노드)
+  const roots = nodes.filter(node => inDegree.get(node.id) === 0);
+  if (roots.length === 0) {
+    roots.push(nodes[0]);
+  }
+
+  // BFS로 레벨 할당
+  const levels = new Map();
+  const visited = new Set();
+  const queue = roots.map(r => ({ node: r, level: 0 }));
+  
+  while (queue.length > 0) {
+    const { node, level } = queue.shift();
+    if (visited.has(node.id)) continue;
+    visited.add(node.id);
+    
+    if (!levels.has(level)) levels.set(level, []);
+    levels.get(level).push(node);
+
+    const children = adjacency.get(node.id) || [];
+    children.forEach(childId => {
+      const childNode = graph.value.getCellById(childId);
+      if (childNode && !visited.has(childId)) {
+        queue.push({ node: childNode, level: level + 1 });
+      }
+    });
+  }
+
+  // 방문하지 않은 노드 처리
+  nodes.forEach(node => {
+    if (!visited.has(node.id)) {
+      const maxLevel = Math.max(...levels.keys(), 0);
+      if (!levels.has(maxLevel + 1)) levels.set(maxLevel + 1, []);
+      levels.get(maxLevel + 1).push(node);
+    }
+  });
+
+  // 위치 계산 (왼쪽에서 오른쪽으로 배치)
+  const levelWidth = 250;  // 레벨 간 가로 간격
+  const nodeHeight = 150;  // 노드 간 세로 간격
+  const startX = 80;       // 시작 X 위치
+
+  levels.forEach((levelNodes, level) => {
+    const totalHeight = levelNodes.length * nodeHeight;
+    const startY = Math.max(100, (600 - totalHeight) / 2);  // 세로 중앙 정렬
+    
+    levelNodes.forEach((node, index) => {
+      node.position(startX + level * levelWidth, startY + index * nodeHeight);
+    });
+  });
+
+  optimizeEdgeRouting();
+  fitContentHandler();
+};
+
+/**
+ * Fit to Content: 모든 요소가 보이도록 뷰포트 조정
+ */
+const fitContentHandler = () => {
+  if (!graph.value) return;
+  
+  graph.value.zoomToFit({ 
+    padding: 100,
+    maxScale: 1.0
+  });
+  graph.value.centerContent();
 };
 </script>
 

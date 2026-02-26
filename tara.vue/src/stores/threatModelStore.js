@@ -23,7 +23,18 @@ export const useThreatModelStore = defineStore('threatmodel', {
         modifiedDiagram: {}, // 수정된 다이어그램 (원본 다이어그램 복사)
         entryNode: '',
         targetNode: '',
-        simulationResult: null // 공격 시뮬레이션 결과 저장 { paths, totalCost, weightType }
+        simulationResult: null, // 공격 시뮬레이션 결과 저장 { paths, totalCost, weightType }
+        // malsim 시뮬레이션 관련 상태
+        malModel: null, // 원본 MAL 모델 (시뮬레이션용)
+        malLangspec: null, // 원본 langspec (시뮬레이션용)
+        malMarFile: null, // 원본 .mar File 객체 (malsim 전송용)
+        malModelFile: null, // 원본 model.json File 객체 (malsim 전송용)
+        malMarFileName: '', // .mar 파일명
+        malModelFileName: '', // model 파일명
+        entryThreat: null, // { nodeId, nodeName, threatId, technique, ttc }
+        targetThreat: null, // { nodeId, nodeName, threatId, technique, ttc }
+        malsimResult: null, // malsim 실행 결과 { attackPath, totalSteps, ... }
+        isSimulating: false // 시뮬레이션 실행 중 여부
     }),
 
     getters: {
@@ -44,7 +55,7 @@ export const useThreatModelStore = defineStore('threatmodel', {
         },
 
         clear() {
-            console.debug('Threatmodel cleared');
+            // 기존 초기화
             this.data = {
                 version: VERSION,
                 modelInfo: {
@@ -54,13 +65,22 @@ export const useThreatModelStore = defineStore('threatmodel', {
                     organization: '',
                     description: ''
                 },
-                diagrams: {}
+                diagrams: {},
+                threatCounter: 0
             };
             this.fileName = '';
             this.stash = '';
             this.modified = false;
             this.modifiedDiagram = {};
+            this.entryNode = '';
+            this.targetNode = '';
             this.simulationResult = null;
+            // malsim 관련 초기화
+            this.malModel = null;
+            this.malLangspec = null;
+            this.entryThreat = null;
+            this.targetThreat = null;
+            this.malsimResult = null;
         },
 
         async save() {  // 전체 모델 저장
