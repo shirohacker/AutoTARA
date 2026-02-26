@@ -21,22 +21,22 @@ AutoTARA (Automated Threat Analysis and Risk Assessment) is a comprehensive web-
 
 ### 🧩 Visual Threat Modeling
 <div align="center">
-  <img src="./example/diagram-sample.png" alt="Threat Modeling" width="100%" />
+  <img src="https://github.com/shirohacker/AutoTARA/blob/main/example/diagram-sample.png" alt="Threat Modeling" width="100%" />
 </div>
 
 ### 🛡️ CTSA (Cyber Threat Susceptibility Analysis)
 <div align="center">
-  <img src="./example/ctsa_sample.png" alt="CTSA" width="100%" />
+  <img src="https://github.com/shirohacker/AutoTARA/blob/main/example/ctsa_sample.png" alt="CTSA" width="100%" />
 </div>
 
 ### 📊 CRRA (Cyber Risk Remediation Assessment)
 <div align="center">
-  <img src="./example/crra_sample.png" alt="CRRA" width="100%" />
+  <img src="https://github.com/shirohacker/AutoTARA/blob/main/example/crra_sample.png" alt="CRRA" width="100%" />
 </div>
 
 ### ⚔️ Attack Simulation
 <div align="center">
-  <img src="./example/attackstep_sample.png" alt="Attack Simulation" width="100%" />
+  <img src="https://github.com/shirohacker/AutoTARA/blob/main/example/attackstep_sample.png" alt="Attack Simulation" width="100%" />
 </div>
 
 ## 🚀 Key Features
