@@ -1,7 +1,7 @@
 # AutoTARA
 
 <div align="center">
-  <img src="./example/auto-tara-logo-2.png" alt="AutoTARA Logo" width="300" />
+  <img src="https://github.com/shirohacker/AutoTARA/blob/main/example/auto-tara-logo-2.png" alt="AutoTARA Logo" width="300" />
   <h1>AutoTARA</h1>
   
   <div>
