@@ -1,6 +1,6 @@
 # DB Info (Postgresql 17)
-- USERNAME: sane
-- PASSWORD: qhqnsvud2025
+- USERNAME: user
+- PASSWORD: passwd2026
 - DB NAME : tara_db
 
 # DB Start
@@ -12,5 +12,5 @@ docker-compose up -d
 # DB Dump
 ```bash
 docker exec -it tara-pg17 bash
-pg_dump -U sane -h localhost -Fc -f tara_db.dump tara_db
+pg_dump -U user -h localhost -Fc -f tara_db.dump tara_db
 ```

@@ -114,7 +114,7 @@ npm run dev
 ## 🐳 Docker Information
 
 The database is managed via `docker-compose.yml` located in the `db` directory.
-*   **User:** `sane`
+*   **User:** `user`
 *   **Database:** `tara_db`
 *   **Port:** `5432`
 *   **Data Volume:** `pgdata` (persisted locally)
