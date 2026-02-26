@@ -542,16 +542,19 @@ const startMalsimHandler = async () => {
             
             // 공격 경로 개수 계산
             let totalPaths = 0;
-            let totalSteps = 0;
+            let maxSteps = 0;
             
             Object.values(attackPaths).forEach(agentPaths => {
-                Object.values(agentPaths).forEach(path => {
-                    totalPaths++;
-                    totalSteps = Math.max(totalSteps, path.length);
+                Object.values(agentPaths).forEach(goalPaths => {
+                    const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+                    paths.forEach(path => {
+                        totalPaths++;
+                        maxSteps = Math.max(maxSteps, path.length);
+                    });
                 });
             });
             
-            toast.success(`Attack path found! ${totalSteps} steps in the path.`);
+            toast.success(`Attack path found! ${totalPaths} path(s), max ${maxSteps} steps.`);
         }
         
     } catch (error) {
@@ -581,12 +584,17 @@ const visualizeMalsimResult = (attackPaths) => {
     const attackedAssets = new Set();
     
     Object.values(attackPaths).forEach(agentPaths => {
-        Object.values(agentPaths).forEach(pathNodes => {
-            pathNodes.forEach(node => {
-                // full_name: "AssetName:attackStep" 형식
-                // 자산 이름만 추출 (콜론 앞부분)
-                const assetName = node.full_name.split(':')[0];
-                attackedAssets.add(assetName);
+        Object.values(agentPaths).forEach(goalPaths => {
+            const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+            paths.forEach(pathNodes => {
+                pathNodes.forEach(node => {
+                    // full_name: "AssetName:attackStep" 형식
+                    // 자산 이름만 추출 (콜론 앞부분)
+                    if (node && node.full_name) {
+                        const assetName = node.full_name.split(':')[0];
+                        attackedAssets.add(assetName);
+                    }
+                });
             });
         });
     });
@@ -609,40 +617,43 @@ const visualizeMalsimResult = (attackPaths) => {
     const edges = model.getEdges();
     
     Object.values(attackPaths).forEach(agentPaths => {
-        Object.values(agentPaths).forEach(pathNodes => {
-            // pathNodes: [{ full_name: "Asset1:step" }, { full_name: "Asset2:step" }, ...]
-            
-            for (let i = 0; i < pathNodes.length - 1; i++) {
-                const currentAsset = pathNodes[i].full_name.split(':')[0];
-                const nextAsset = pathNodes[i+1].full_name.split(':')[0];
-                
-                if (currentAsset === nextAsset) continue; // 같은 자산 내 이동은 엣지 하이라이트 스킵
-                
-                // 그래프에서 두 자산 이름에 해당하는 노드 ID 찾기
-                const currentNode = nodes.find(n => n.getData()?.name === currentAsset);
-                const nextNode = nodes.find(n => n.getData()?.name === nextAsset);
-                
-                if (currentNode && nextNode) {
-                    const currentId = currentNode.id;
-                    const nextId = nextNode.id;
+        Object.values(agentPaths).forEach(goalPaths => {
+            const paths = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+            paths.forEach(pathNodes => {
+                for (let i = 0; i < pathNodes.length - 1; i++) {
+                    if (!pathNodes[i] || !pathNodes[i].full_name || !pathNodes[i+1] || !pathNodes[i+1].full_name) continue;
                     
-                    // 두 노드 사이의 엣지 찾기 (방향 무관하게 연결된 엣지 하이라이트)
-                    const connectedEdges = edges.filter(edge => {
-                        const source = edge.getSourceCellId();
-                        const target = edge.getTargetCellId();
-                        return (source === currentId && target === nextId) || 
-                               (source === nextId && target === currentId);
-                    });
+                    const currentAsset = pathNodes[i].full_name.split(':')[0];
+                    const nextAsset = pathNodes[i+1].full_name.split(':')[0];
                     
-                    connectedEdges.forEach(edge => {
-                        const data = edge.getData() || {};
-                        if (!data.isAttackPath) {
-                            edge.setData({ isAttackPath: true }, { merge: true, skipSelection: true });
-                            dataChanged.updateStyleAttrs(edge);
-                        }
-                    });
+                    if (currentAsset === nextAsset) continue; // 같은 자산 내 이동은 엣지 하이라이트 스킵
+                    
+                    // 그래프에서 두 자산 이름에 해당하는 노드 ID 찾기
+                    const currentNode = nodes.find(n => n.getData()?.name === currentAsset);
+                    const nextNode = nodes.find(n => n.getData()?.name === nextAsset);
+                    
+                    if (currentNode && nextNode) {
+                        const currentId = currentNode.id;
+                        const nextId = nextNode.id;
+                        
+                        // 두 노드 사이의 엣지 찾기 (방향 무관하게 연결된 엣지 하이라이트)
+                        const connectedEdges = edges.filter(edge => {
+                            const source = edge.getSourceCellId();
+                            const target = edge.getTargetCellId();
+                            return (source === currentId && target === nextId) || 
+                                   (source === nextId && target === currentId);
+                        });
+                        
+                        connectedEdges.forEach(edge => {
+                            const data = edge.getData() || {};
+                            if (!data.isAttackPath) {
+                                edge.setData({ isAttackPath: true }, { merge: true, skipSelection: true });
+                                dataChanged.updateStyleAttrs(edge);
+                            }
+                        });
+                    }
                 }
-            }
+            });
         });
     });
 };

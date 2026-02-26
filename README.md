@@ -15,7 +15,7 @@
   </div>
 </div>
 
-AutoTARA (Automated Threat Assessment and Remediation Analysis) is a comprehensive web-based tool designed to streamline the process of threat modeling and risk assessment based on MITRE methodologies.
+AutoTARA (Automated Threat Analysis and Risk Assessment) is a comprehensive web-based framework that automates the entire ISO/SAE 21434 TARA process for the automotive industry. By integrating the MITRE TARA (CTSA/CRRA) methodology, formal modeling, and LLMs, AutoTARA resolves manual assessment inconsistencies and provides scalable, quantitative prioritization of security countermeasures.
 
 ## 🔍 Preview
 

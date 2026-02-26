@@ -16,6 +16,7 @@ const mitreController = require('../controllers/mitreController');
 const taraController = require('../controllers/taraController');
 const malController = require('../controllers/malController');
 const simulationController = require('../controllers/simulationController');
+const taraAssessmentController = require('../controllers/taraAssessmentController');
 
 // MITRE 관련 라우트
 router.get('/v1/mitre/techniques', mitreController.getMitreTechniques);           // 전체 조회
@@ -75,6 +76,22 @@ router.get('/v1/simulation/session/:sessionId', simulationController.getSessionI
 
 // DELETE /api/v1/simulation/session/:sessionId - 세션 삭제
 router.delete('/v1/simulation/session/:sessionId', simulationController.deleteSession);
+
+// TARA Assessment 관련 라우트
+// POST /api/v1/tara/analyze - LLM 분석 요청
+router.post('/v1/tara/analyze', taraAssessmentController.analyzeThreats);
+
+// GET /api/v1/tara/assessments - 전체 조회 (query: sessionId)
+router.get('/v1/tara/assessments', taraAssessmentController.getAllAssessments);
+
+// GET /api/v1/tara/assessments/:id - 단건 조회
+router.get('/v1/tara/assessments/:id', taraAssessmentController.getAssessmentById);
+
+// PUT /api/v1/tara/assessments/:id - 수정 (사용자 입력 필드)
+router.put('/v1/tara/assessments/:id', taraAssessmentController.updateAssessment);
+
+// DELETE /api/v1/tara/assessments/:id - 삭제
+router.delete('/v1/tara/assessments/:id', taraAssessmentController.deleteAssessment);
 
 module.exports = router;
 

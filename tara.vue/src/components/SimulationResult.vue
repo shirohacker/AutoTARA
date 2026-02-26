@@ -146,18 +146,33 @@ const displayedPaths = computed(() => {
         const attackPaths = malsimResult.value.attackPaths || {};
         
         Object.values(attackPaths).forEach(agentPaths => {
-            Object.values(agentPaths).forEach(rawPath => {
-                // 자산 이름 추출 (중복 제거하지 않고 모든 단계 표시하되, 표시는 자산명:공격단계)
-                const nodes = rawPath.map(step => ({
-                    // 식별을 위해 step 객체 통째로 사용 또는 포맷팅
-                    isMalsimStep: true,
-                    name: step.full_name, // "Asset:step"
-                    assetName: step.full_name.split(':')[0],
-                    stepName: step.full_name.split(':')[1],
-                    type: step.type,
-                    ttc: step.ttc
-                }));
-                paths.push({ nodes, cost: rawPath.length });
+            Object.values(agentPaths).forEach(goalPaths => {
+                const pathList = (goalPaths.length > 0 && Array.isArray(goalPaths[0])) ? goalPaths : [goalPaths];
+                
+                pathList.forEach(rawPath => {
+                    // 자산 이름 추출 (중복 제거하지 않고 모든 단계 표시하되, 표시는 자산명:공격단계)
+                    const nodes = rawPath.map(step => {
+                        if (!step || !step.full_name) {
+                            return {
+                                isMalsimStep: true,
+                                name: 'Unknown',
+                                assetName: 'Unknown',
+                                stepName: 'Unknown',
+                                type: step?.type || 'Unknown'
+                            };
+                        }
+                        return {
+                            // 식별을 위해 step 객체 통째로 사용 또는 포맷팅
+                            isMalsimStep: true,
+                            name: step.full_name, // "Asset:step"
+                            assetName: step.full_name.split(':')[0],
+                            stepName: step.full_name.split(':')[1],
+                            type: step.type,
+                            ttc: step.ttc
+                        };
+                    });
+                    paths.push({ nodes, cost: rawPath.length });
+                });
             });
         });
         return paths;

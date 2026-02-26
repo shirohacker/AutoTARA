@@ -22,6 +22,10 @@
           <i class="fa-solid fa-plus"></i>
           New Diagram
         </button>
+        <router-link to="/dashboard" class="btn btn-outline-primary btn-lg px-4">
+          <i class="fa-solid fa-chart-line"></i>
+          Dashboard
+        </router-link>
       </div>
     </div>
     <div class="overflow-hidden" style="max-height: 45vh">
