@@ -10,9 +10,15 @@
     "dev": "nodemon index.js",
     "start": "node index.js"
   },
+  "nodemonConfig": {
+    "ignore": [
+      "temp/**"
+    ]
+  },
   "dependencies": {
     "adm-zip": "^0.5.16",
     "axios": "^1.13.5",
+    "ci": "^2.3.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
