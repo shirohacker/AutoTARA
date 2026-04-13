@@ -1,0 +1,3 @@
+04-13 07:19 maltoolbox   INFO     Set loggin level of maltoolbox to 20.
+04-13 07:19 maltoolbox.language.languagegraph INFO     Loading mar archive /home/sane/vehiclesec/AutoTARA/sample/testcase/org.mal-lang.vehicleLang-2.0.1.mar
+04-13 07:19 maltoolbox.language.languagegraph INFO     Save language specification to logs/langspec_file.json

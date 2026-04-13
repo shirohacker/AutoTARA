@@ -1,0 +1,15 @@
+lang_file: org.mal-lang.vehicleLang-2.0.1.mar
+model_file: GT01_model.json
+agents:
+  Attacker:
+    type: attacker
+    entry_points:
+    - TCBRemoteAccess:fullAccess
+    goals:
+    - BodyCAN:messageInjection
+    agent_class: BreadthFirstAttacker
+  Defender:
+    type: defender
+    agent_class: PassiveAgent
+sim_settings:
+  ttc_mode: EXPECTED_VALUE

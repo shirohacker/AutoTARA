@@ -1,0 +1,170 @@
+assets:
+  0:
+    associated_assets:
+      dataflows:
+        11: LastStateCallMsg
+      networkECUs:
+        2: CentralGateway
+        3: TelematicsTCB
+      trafficGatewayECU:
+        2: CentralGateway
+    defenses:
+      busOffProtection: 0.0
+    name: KCAN
+    type: CANNetwork
+  1:
+    associated_assets:
+      dataflows:
+        14: SeatDiagMsg
+      networkECUs:
+        2: CentralGateway
+        5: SeatECU
+      trafficGatewayECU:
+        2: CentralGateway
+    defenses:
+      busOffProtection: 0.0
+    name: BodyCAN
+    type: CANNetwork
+  2:
+    associated_assets:
+      machineExecutedApps:
+        8: GatewayRX
+        9: GatewayTX
+      trafficVNetworks:
+        0: KCAN
+        1: BodyCAN
+      vehiclenetworks:
+        0: KCAN
+        1: BodyCAN
+    defenses:
+      firewallProtection: 1.0
+    name: CentralGateway
+    type: GatewayECU
+  3:
+    associated_assets:
+      machineExecutedApps:
+        4: TCBRemoteAccess
+        7: TCBTX
+      vehiclenetworks:
+        0: KCAN
+    defenses:
+      messageConflictionProtection: 0.0
+      operationModeProtection: 0.0
+    name: TelematicsTCB
+    type: ECU
+  4:
+    associated_assets:
+      hostMachine:
+        3: TelematicsTCB
+    name: TCBRemoteAccess
+    type: NetworkAccessService
+  5:
+    associated_assets:
+      machineExecutedApps:
+        6: SeatUDS
+        10: SeatRX
+      vehiclenetworks:
+        1: BodyCAN
+    defenses:
+      messageConflictionProtection: 0.0
+      operationModeProtection: 0.0
+    name: SeatECU
+    type: ECU
+  6:
+    associated_assets:
+      hostMachine:
+        5: SeatECU
+    name: SeatUDS
+    type: UDSService
+  7:
+    associated_assets:
+      dataflows:
+        11: LastStateCallMsg
+      hostMachine:
+        3: TelematicsTCB
+    name: TCBTX
+    type: TransmitterService
+  8:
+    associated_assets:
+      dataflows:
+        11: LastStateCallMsg
+      hostMachine:
+        2: CentralGateway
+    name: GatewayRX
+    type: VehicleNetworkReceiver
+  9:
+    associated_assets:
+      dataflows:
+        14: SeatDiagMsg
+      hostMachine:
+        2: CentralGateway
+    name: GatewayTX
+    type: TransmitterService
+  10:
+    associated_assets:
+      dataflows:
+        14: SeatDiagMsg
+      hostMachine:
+        5: SeatECU
+    name: SeatRX
+    type: VehicleNetworkReceiver
+  11:
+    associated_assets:
+      data:
+        13: LastStateCallData
+      dataflowId:
+        12: LastStateCallMsgID
+      networks:
+        0: KCAN
+      receiver:
+        8: GatewayRX
+      transmitter:
+        7: TCBTX
+    name: LastStateCallMsg
+    type: ConnectionlessDataflow
+  12:
+    associated_assets:
+      dataflow:
+        11: LastStateCallMsg
+    name: LastStateCallMsgID
+    type: MessageID
+  13:
+    associated_assets:
+      dataflow:
+        11: LastStateCallMsg
+    name: LastStateCallData
+    type: Data
+  14:
+    associated_assets:
+      data:
+        16: SeatDiagData
+      dataflowId:
+        15: SeatDiagMsgID
+      networks:
+        1: BodyCAN
+      receiver:
+        10: SeatRX
+      transmitter:
+        9: GatewayTX
+    name: SeatDiagMsg
+    type: ConnectionlessDataflow
+  15:
+    associated_assets:
+      dataflow:
+        14: SeatDiagMsg
+    name: SeatDiagMsgID
+    type: MessageID
+  16:
+    associated_assets:
+      dataflow:
+        14: SeatDiagMsg
+    name: SeatDiagData
+    type: Data
+metadata:
+  MAL-Toolbox Version: 2.8.1
+  info: Created by the mal-toolbox model python module.
+  langID: org.mal-lang.vehicleLang
+  langVersion: 2.0.1
+  malVersion: 0.1.0-SNAPSHOT
+  name: VehicleLang GroundTruth Model GT01 - Connected BMW Cars (TCB->Gateway->UDS
+    Forward)
