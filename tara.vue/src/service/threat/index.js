@@ -3,7 +3,9 @@ import { v4 } from 'uuid';
 export const createNewThreat = (number) => {
     return {
         id: v4(),
+        attackStep: '',
         mitre_id: '',
+        mitre_name: '',
         technique: 'New Threat',
         status: 'open', // open, mitigated
         description: '',
@@ -20,8 +22,10 @@ export const createNewThreat = (number) => {
 export const createNewThreatWithMitre = (mitreTechnique, number) => {
     return {
         id: v4(),
+        attackStep: mitreTechnique.attackStep || mitreTechnique.name,
         mitre_id: mitreTechnique.id,
-        technique: mitreTechnique.name,
+        mitre_name: mitreTechnique.name,
+        technique: mitreTechnique.attackStep || mitreTechnique.name,
         status: 'open', // open, mitigated
         description: mitreTechnique.description || '',
         riskScore: '3.3',  // TTP Risk Score

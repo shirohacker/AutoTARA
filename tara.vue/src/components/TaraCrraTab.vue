@@ -14,7 +14,19 @@
               <button class="btn btn-outline-secondary" type="button" @click="cmSearch = ''" v-if="cmSearch">X</button>
             </div>
 
-            <div class="list-group overflow-auto border-top" style="flex: 1; max-height: 600px;">
+            <div
+              v-if="filteredCMs.length === 0"
+              class="border-top d-flex flex-column justify-content-center align-items-center text-center text-muted px-3"
+              style="flex: 1; max-height: 600px; min-height: 240px;"
+            >
+              <i class="fas fa-database fa-3x mb-3 opacity-25"></i>
+              <div>No countermeasure data available.</div>
+              <div class="small">
+                {{ cmSearch ? 'No countermeasures matched your search.' : 'MITRE countermeasures are not loaded in the database.' }}
+              </div>
+            </div>
+
+            <div v-else class="list-group overflow-auto border-top" style="flex: 1; max-height: 600px;">
               <div
                   v-for="cm in filteredCMs"
                   :key="cm.id"
@@ -179,39 +191,14 @@ const toggleRow = (id) => {
 
 const isRowExpanded = (id) => expandedRows.value.includes(id);
 
-const sampleNistData = {
-  'M1048': [
-    { id: 'SC-39', name: 'Process Isolation', description: 'Separates execution domains per process to limit the spread of vulnerabilities to other processes or system resources.' },
-    { id: 'SC-02', name: 'Separation of System and User Functionality', description: 'Separates system administration functions from user functions to reduce risk from exposed administrative interfaces.' },
-    { id: 'SC-03', name: 'Security Function Isolation', description: 'Isolates security functions so application flaws do not impact core security mechanisms.' },
-    { id: 'SA-08', name: 'Security and Privacy Engineering Principles', description: 'Applies security design principles to establish isolation and layered defenses that reduce propagation of attacks.' },
-    { id: 'SI-10', name: 'Information Input Validation', description: 'Validates inputs to fundamentally block vectors such as injection and remote code execution.' }
-  ],
-  'M1050': [
-    { id: 'SC-07', name: 'Boundary Protection', description: 'Configures boundary protections such as WAFs to block malicious traffic before it reaches applications.' },
-    { id: 'SC-18', name: 'Mobile Code', description: 'Restricts untrusted code or scripts from executing in the application environment to prevent malicious insertion.' },
-    { id: 'SI-03', name: 'Malicious Code Protection', description: 'Applies malware detection and blocking to prevent malicious inputs from reaching vulnerable web components.' },
-    { id: 'SC-30', name: 'Concealment and Misdirection', description: 'Uses concealment and misdirection to reduce attacker targeting opportunities and lower exploitation success.' },
-    { id: 'SI-10', name: 'Information Input Validation', description: 'Validates inputs to fundamentally block vectors such as injection and remote code execution.' }
-  ],
-  'M1030': [
-    { id: 'AC-04', name: 'Information Flow Enforcement', description: 'Enforces information flow policies to restrict unauthorized paths and unnecessary communications.' },
-    { id: 'CM-07', name: 'Least Functionality', description: 'Removes unnecessary functions and ports to reduce the attack surface.' },
-    { id: 'SC-07', name: 'Boundary Protection', description: 'Segregates DMZ and internal networks to prevent direct application server access to internal segments.' }
-  ]
-};
-
 const addCM = (cm) => {
   if (!isCMSelected(cm.id)) {
-    // Inject sample NIST data if available
-    const nistInfo = sampleNistData[cm.id] || [];
-    
     selectedCMs.push({
       ...cm,
       mitigationTypes: 'prevent',
       effectiveness: 2, // Medium default
       cost: 2, // Medium default
-      nist_controls: nistInfo
+      nist_controls: Array.isArray(cm.nist_controls) ? cm.nist_controls : []
     });
   }
   tmStore.setModified()
@@ -230,12 +217,7 @@ watch(selectedCMs, (newVal) => {
   editStore.threatData.selectedCMs = JSON.parse(JSON.stringify(newVal));
 }, { deep: true });
 
-const allCMs = ref([
-  // Sample data to make sure M1048, M1050, M1030 are available for testing even if API fails or doesn't have them
-  { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-  { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-  { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' },
-]);
+const allCMs = ref([]);
 
 const filteredCMs = computed(() => {
   if (!cmSearch.value) return allCMs.value;
@@ -245,89 +227,67 @@ const filteredCMs = computed(() => {
   return allCMs.value.filter(cm =>
       (cm.name && cm.name.toLowerCase().includes(k)) ||
       (cm.id && cm.id.toLowerCase().includes(k)) ||
-      (cm.description && cm.description.toLowerCase().includes(k))
+      (getCmDescription(cm) && getCmDescription(cm).toLowerCase().includes(k))
   );
 });
 
+const getCmDescription = (cm) => cm?.description || cm?.m_description || '';
+
 const init = () => {
-  // [Fix] 초기 로드시 store에 저장된 selectedCMs가 있다면 가져오기
-  if (threatData.value && threatData.value.selectedCMs && Array.isArray(threatData.value.selectedCMs)) {
-    // When loading from store, we might need to re-attach sample data if it's missing (since we just added it)
-    const storedCMs = JSON.parse(JSON.stringify(threatData.value.selectedCMs));
-    
-    storedCMs.forEach(cm => {
-        // If data is missing or user re-enters page, re-attach NIST info if available in our sample map
-        if ((!cm.nist_controls || cm.nist_controls.length === 0) && sampleNistData[cm.id]) {
-            cm.nist_controls = sampleNistData[cm.id];
-        }
-    });
+  const storedCMs = Array.isArray(threatData.value?.selectedCMs)
+    ? JSON.parse(JSON.stringify(threatData.value.selectedCMs))
+    : [];
 
-    selectedCMs.splice(0, selectedCMs.length, ...storedCMs);
-  }
+  selectedCMs.splice(0, selectedCMs.length, ...storedCMs);
+  expandedRows.value = [];
 
-  // We are using local sample data for now to ensure the specific IDs required by the user are present.
-  
-  let mitreId = threatData.value.mitre_id || null;
+  const mitreId = threatData.value?.mitre_id || null;
   if (mitreId && mitreId !== '') {
     getMitreCMsByThreatId(mitreId)
-  } else {
-    getAllMitreCMs()
+    return;
   }
+
+  allCMs.value = [];
 }
 
 const getMitreCMsByThreatId = async (mitreId) => {
   try {
     const res = await axios.get(`/api/v1/mitre/countermeasures/${mitreId}`)
-    // Merge API results with our sample/demo items if they aren't there
-    const apiData = res.data;
-    
-    // Ensure our demo items are in the list for the user to see
-    const demoItems = [
-      { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-      { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-      { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
-    ];
-
-    // Simple merge: add demo items if they don't exist in map
-    const combined = [...apiData];
-    demoItems.forEach(d => {
-        if (!combined.some(c => c.id === d.id)) {
-            combined.push(d);
-        }
-    });
-    
-    allCMs.value = combined;
+    allCMs.value = Array.isArray(res.data)
+      ? res.data.map(item => ({
+          ...item,
+          description: item.description || item.m_description || ''
+        }))
+      : [];
   } catch (error) {
     console.error('Error get MITRE countermeasures by threat ID:', error);
-    // Fallback to local sample data is already in ref init
+    allCMs.value = [];
   }
 };
 
 const getAllMitreCMs = async () => {
   try {
     const res = await axios.get('/api/v1/mitre/countermeasures')
-     // Merge logic similiar to above
-    const apiData = res.data;
-    const demoItems = [
-      { id: 'SAMPLE001', name: 'Application Isolation and Sandboxing', description: 'Restrict the execution environment of applications to separate them from other applications and system resources.' },
-      { id: 'SAMPLE002', name: 'Exploit Protection', description: 'Use capabilities generally available in operating systems that make it more difficult for adversaries to exploit vulnerabilities.' },
-      { id: 'SAMPLE003', name: 'Network Segmentation', description: 'Architect sections of the network to isolate critical systems, functions, or resources.' }
-    ];
-    
-    const combined = [...apiData];
-    demoItems.forEach(d => {
-        if (!combined.some(c => c.id === d.id)) {
-            combined.push(d);
-        }
-    });
-
-    allCMs.value = combined;
+    allCMs.value = Array.isArray(res.data)
+      ? res.data.map(item => ({
+          ...item,
+          description: item.description || item.m_description || ''
+        }))
+      : [];
   } catch (error) {
     console.error('Error get MITRE countermeasures:', error);
+    allCMs.value = [];
   }
 };
 
 onMounted(() => {
   init()
 })
+
+watch(
+  () => [threatData.value?.id, threatData.value?.mitre_id],
+  () => {
+    init();
+  }
+);
 </script>

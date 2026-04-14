@@ -8,13 +8,14 @@
  */
 
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawn } = require('child_process');
 const yaml = require('js-yaml');
 const { v4: uuid } = require('uuid');
 
 // 임시 파일 저장 디렉토리
-const TEMP_DIR = path.join(__dirname, '../../temp');
+const TEMP_DIR = process.env.SIMULATION_TEMP_DIR || path.join(os.tmpdir(), 'autotara', 'tara-server');
 const SIMULATION_DIR = path.join(TEMP_DIR, 'simulations');
 
 // 업로드된 MAL 파일 저장소 (세션별)
@@ -104,7 +105,6 @@ function generateScenarioYaml(config) {
         agents: {
             [attackerName]: {
                 type: 'attacker',
-                name: attackerName,
                 entry_points: [entryPoint],
                 goals: [goal],
                 agent_class: 'BreadthFirstAttacker'
@@ -422,14 +422,12 @@ function createScenario(entryPoint, goal, langFileName, modelFileName) {
         agents: {
             Attacker: {
                 type: 'attacker',
-                name: 'Attacker',
                 entry_points: [entryPoint],
                 goals: [goal],
                 agent_class: 'BreadthFirstAttacker'
             },
             Defender: {
                 type: 'defender',
-                name: 'Defender',
                 agent_class: 'PassiveAgent'
             }
         }
@@ -476,12 +474,28 @@ async function getSimulationStatus(sessionId) {
     }
 }
 
+function buildResultView(data, view) {
+    if (view !== 'shortest') {
+        return data;
+    }
+
+    const result = data && data.result ? data.result : {};
+
+    return {
+        ...data,
+        result: {
+            shortest_paths: result.shortest_paths || null
+        }
+    };
+}
+
 /**
  * Python 서버에서 시뮬레이션 결과를 조회합니다.
  * @param {string} sessionId - Python 서버의 세션 ID
+ * @param {string} [view] - 결과 뷰 타입 (예: "shortest")
  * @returns {Promise<Object>} 결과 정보
  */
-async function getSimulationResult(sessionId) {
+async function getSimulationResult(sessionId, view) {
     const axios = require('axios');
     const PYTHON_SERVER_URL = 'http://localhost:8000';
 
@@ -493,7 +507,7 @@ async function getSimulationResult(sessionId) {
 
         return {
             success: true,
-            data: response.data
+            data: buildResultView(response.data, view)
         };
 
     } catch (error) {

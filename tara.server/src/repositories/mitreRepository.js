@@ -7,8 +7,56 @@ const getMitreTechniques = async () => {
 }
 
 const getMitreCountermeasures = async () => {
-    const query = `select id, name, description_en from mitre.mitigations`
+    const query = `select id, name, description from mitre.mitigations`
     const { rows } = await db.query(query);
+    return rows;
+}
+
+const getTechniqueMappingByAttackStep = async ({ assetType, stepName }) => {
+    const query = `
+        WITH RECURSIVE asset_lineage AS (
+            SELECT
+                $1::TEXT AS asset,
+                0 AS depth
+
+            UNION
+
+            SELECT DISTINCT
+                dt.parent AS asset,
+                al.depth + 1 AS depth
+            FROM
+                asset_lineage al
+                JOIN mitre.dfd_techniques dt
+                    ON dt.asset = al.asset
+            WHERE
+                NULLIF(dt.parent, '') IS NOT NULL
+                AND dt.parent <> al.asset
+                AND al.depth < 10
+        )
+        SELECT
+            dt.id,
+            dt.category,
+            dt.asset,
+            dt.parent,
+            dt.step_name,
+            dt.inferred_tactic_id,
+            dt.inferred_tactic,
+            dt.technique_id,
+            dt.technique_name,
+            dt.technique_tactics,
+            al.depth AS inheritance_depth
+        FROM
+            asset_lineage al
+            JOIN mitre.dfd_techniques dt
+                ON dt.asset = al.asset
+        WHERE
+            dt.step_name = $2
+        ORDER BY
+            al.depth ASC,
+            dt.id ASC,
+            dt.technique_id ASC
+    `;
+    const { rows } = await db.query(query, [assetType, stepName]);
     return rows;
 }
 
@@ -18,7 +66,7 @@ const getMitreTechniqueById = async (id) => {
         -- [Technique 테이블]
         t.id,
         t.name,
-        t.description_en AS description,
+        t.description,
         
         -- [TTP Scoring 테이블] (created, modified 제외)
         json_build_array(
@@ -51,7 +99,7 @@ const searchMitreThreatsByStencil = async (stencilId) => {
         SELECT
             t.id,
             t.name,
-            t.description_en AS description,
+            t.description,
             json_build_array(
                     json_build_object('key', 'proximity',          'value', COALESCE(ts."Proximity", 0),          'weight', 0.1),
                     json_build_object('key', 'locality',           'value', COALESCE(ts."Locality", 0),           'weight', 0.1),
@@ -85,7 +133,7 @@ const getMitigationsByTechniqueId = async (techniqueId) => {
         SELECT
             mt.mitigation_id AS id,
             m.name,
-            mt.m_description_en AS description
+            mt.m_description AS description
         FROM
             mitre.mitigation_technique mt
                 JOIN
@@ -127,6 +175,7 @@ const getTtpScoringReasonByTechniqueId = async (techniqueId) => {
 module.exports = {
     getMitreTechniques,
     getMitreCountermeasures,
+    getTechniqueMappingByAttackStep,
     getMitreTechniqueById,
     searchMitreThreatsByStencil,
     getMitigationsByTechniqueId,

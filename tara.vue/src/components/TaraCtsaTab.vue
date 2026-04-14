@@ -11,6 +11,11 @@
 <!--          </div>-->
 
           <div class="mb-3">
+            <label class="form-label small text-muted fw-bold">ATTACK STEP</label>
+            <input type="text" class="form-control" :value="threatData.attackStep || threatData.technique" disabled />
+          </div>
+
+          <div class="mb-3">
             <label class="form-label small text-muted fw-bold">MITRE ATT&CK ID</label>
             <input type="text" class="form-control" v-model="threatData.mitre_id" disabled />
           </div>
@@ -230,7 +235,7 @@ const selectTechnique = (item) => {
   keyword.value = item.name;
   if (threatData.value) {
     threatData.value.mitre_id = item.id;
-    threatData.value.technique = item.name;
+    threatData.value.mitre_name = item.name;
     // Fetch TTP Score, Description, Countermeasures
 
   }
@@ -243,7 +248,7 @@ const fetchMitreData = (id) => {
         .then(res => {
           const data = res.data;
           if (threatData.value) {
-            threatData.value.technique = data.name;
+            threatData.value.mitre_name = data.name;
             threatData.value.description = data.description;
             // Update TTP Score
             if (Array.isArray(data.ttp_score)) {
@@ -267,7 +272,7 @@ const fetchMitreData = (id) => {
 
 const addNewTechniqueFromInput = () => {
   if (threatData.value) {
-    threatData.value.technique = keyword.value;
+    threatData.value.mitre_name = keyword.value;
     threatData.value.mitre_id = 'CUSTOM-' + Math.floor(Math.random() * 1000);
   }
   showDropdown.value = false;
@@ -328,6 +333,14 @@ const riskLevel = computed(() => {
 const init = () => {
   if (!threatData.value) return;
 
+  if (!threatData.value.attackStep) {
+    threatData.value.attackStep = threatData.value.technique || '';
+  }
+
+  if (!threatData.value.mitre_name && threatData.value.mitre_id) {
+    threatData.value.mitre_name = threatData.value.technique || '';
+  }
+
   getTTPScoreReason()
 
   const savedScores = threatData.value.ttp_score;
@@ -336,7 +349,7 @@ const init = () => {
   }
 
   if (threatData.value.mitre_id) {
-    keyword.value = threatData.value.technique
+    keyword.value = threatData.value.mitre_name || ''
   }
 }
 

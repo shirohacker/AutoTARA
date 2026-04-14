@@ -16,12 +16,12 @@
         fastest path to compromise before attackers do.
       </p>
       <div class="d-grid gap-2 d-sm-flex justify-content-sm-center mb-5">
-        <ThreatModelParser />
+        <!-- <ThreatModelParser /> -->
         <MalModelParser />
-        <button class="btn btn-outline-secondary btn-lg px-4" @click="openCreateDiagramModal">
+        <!-- <button class="btn btn-outline-secondary btn-lg px-4" @click="openCreateDiagramModal">
           <i class="fa-solid fa-plus"></i>
           New Diagram
-        </button>
+        </button> -->
         <router-link to="/dashboard" class="btn btn-outline-primary btn-lg px-4">
           <i class="fa-solid fa-chart-line"></i>
           Dashboard

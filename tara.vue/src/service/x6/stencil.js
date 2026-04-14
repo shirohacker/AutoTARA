@@ -79,95 +79,95 @@ const get = (target, container, StencilClass = DefaultStencil) => {
 
     stencil.load([new shapes.TextBlock()], 'metadata');
 
-    stencil.load(
-        [
-            new shapes.ProcessShape({
-                label: 'Kubectl',
-                data: { name: 'Kubectl' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Kube Proxy',
-                data: { name: 'Kube Proxy' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Control Plane',
-                data: { name: 'Control Plane' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Kubelet',
-                data: { name: 'Kubelet' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Pod',
-                data : { name: 'Pod' }
-            }),
-            new shapes.ProcessShape({
-                label: 'HostPath Controller',
-                data: { name: 'HostPath Controller' }
-            }),
-        ],
-        'kubernetes'
-    )
+    // stencil.load(
+    //     [
+    //         new shapes.ProcessShape({
+    //             label: 'Kubectl',
+    //             data: { name: 'Kubectl' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Kube Proxy',
+    //             data: { name: 'Kube Proxy' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Control Plane',
+    //             data: { name: 'Control Plane' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Kubelet',
+    //             data: { name: 'Kubelet' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Pod',
+    //             data : { name: 'Pod' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'HostPath Controller',
+    //             data: { name: 'HostPath Controller' }
+    //         }),
+    //     ],
+    //     'kubernetes'
+    // )
 
-    stencil.load(
-        [
-            new shapes.ProcessShape({
-                label: 'gRPC',
-                data: { name: 'gRPC' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Metrics',
-                data: { name: 'Metrics' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Services',
-                data: { name: 'Services' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Metadata',
-                data: { name: 'Metadata' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Snapshotter',
-                data: { name: 'Snapshotter' }
-            }),
-            new shapes.ProcessShape({
-                label: 'Containerd-shim',
-                data: { name: 'Containerd-shim' }
-            }),
-            new shapes.ProcessShape({
-                label: 'runc',
-                data: { name: 'runc' }
-            }),
-            new shapes.StoreShape({
-                label: 'BoltDB',
-                data: { name: 'BoltDB' }
-            }),
-            new shapes.StoreShape({
-                label: 'Content Store',
-                data: { name: 'Content Store' }
-            })
-        ],
-        'containerd'
-    )
+    // stencil.load(
+    //     [
+    //         new shapes.ProcessShape({
+    //             label: 'gRPC',
+    //             data: { name: 'gRPC' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Metrics',
+    //             data: { name: 'Metrics' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Services',
+    //             data: { name: 'Services' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Metadata',
+    //             data: { name: 'Metadata' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Snapshotter',
+    //             data: { name: 'Snapshotter' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'Containerd-shim',
+    //             data: { name: 'Containerd-shim' }
+    //         }),
+    //         new shapes.ProcessShape({
+    //             label: 'runc',
+    //             data: { name: 'runc' }
+    //         }),
+    //         new shapes.StoreShape({
+    //             label: 'BoltDB',
+    //             data: { name: 'BoltDB' }
+    //         }),
+    //         new shapes.StoreShape({
+    //             label: 'Content Store',
+    //             data: { name: 'Content Store' }
+    //         })
+    //     ],
+    //     'containerd'
+    // )
 
-    stencil.load(
-        [
-            new shapes.StoreShape({
-                label: 'Host File System',
-                data: { name: 'Host File System' }
-            }),
-            new shapes.ActorShape({
-                label: 'Prometheus',
-                data: { name: 'Prometheus' }
-            }),
-            new shapes.StoreShape({
-                label: 'Image Registry',
-                data: { name: 'Image Registry' }
-            })
-        ],
-        'cloud'
-    )
+    // stencil.load(
+    //     [
+    //         new shapes.StoreShape({
+    //             label: 'Host File System',
+    //             data: { name: 'Host File System' }
+    //         }),
+    //         new shapes.ActorShape({
+    //             label: 'Prometheus',
+    //             data: { name: 'Prometheus' }
+    //         }),
+    //         new shapes.StoreShape({
+    //             label: 'Image Registry',
+    //             data: { name: 'Image Registry' }
+    //         })
+    //     ],
+    //     'cloud'
+    // )
 
     container.appendChild(stencil.container);
 };

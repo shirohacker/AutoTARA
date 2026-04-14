@@ -5,13 +5,16 @@ const getMitreTechniques = async () => {
 };
 
 const getMitreCountermeasures = async () => {
-    // id: id, name: name, description: description_en 변환
     const rows =  await mitreRepository.getMitreCountermeasures();
     return rows.map(row => ({
         id: row.id,
         name: row.name,
-        description: row.description_en
+        description: row.description
     }));
+}
+
+const getTechniqueMappingByAttackStep = async (assetType, stepName) => {
+    return await mitreRepository.getTechniqueMappingByAttackStep({ assetType, stepName });
 }
 
 const getMitreTechniqueById = async (id) => {
@@ -33,6 +36,7 @@ const getTtpScoringReasonByTechniqueId = async (techniqueId) => {
 module.exports = {
     getMitreTechniques,
     getMitreCountermeasures,
+    getTechniqueMappingByAttackStep,
     getMitreTechniqueById,
     searchMitreThreatsByStencil,
     getMitigationsByTechniqueId,

@@ -1,1 +1,0 @@
-04-13 07:19 malsim.mal_simulator.simulator INFO     Resetting MAL Simulator.

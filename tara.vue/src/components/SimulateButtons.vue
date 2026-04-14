@@ -26,12 +26,12 @@
         </li>
         <li><hr class="dropdown-divider"></li>
         <li>
-          <button class="dropdown-item" @click="startTTCHandler">
+          <button class="dropdown-item disabled" @click="startTTCHandler">
             <i class="fa-solid fa-clock me-2 text-muted"></i>Time To Compromise (TTC)
           </button>
         </li>
         <li>
-          <button class="dropdown-item" @click="startEdgeHandler">
+          <button class="dropdown-item disabled" @click="startEdgeHandler">
             <i class="fa-solid fa-share-nodes me-2 text-muted"></i>Edge Path Analysis
           </button>
         </li>
@@ -442,8 +442,10 @@ const startMalsimHandler = async () => {
     
     try {
         // Entry/Target 형식: "AssetName:attackStep"
-        const entryPoint = `${tmStore.entryThreat.nodeName}:${tmStore.entryThreat.technique}`;
-        const goal = `${tmStore.targetThreat.nodeName}:${tmStore.targetThreat.technique}`;
+        const entryStep = tmStore.entryThreat.attackStep || tmStore.entryThreat.technique;
+        const goalStep = tmStore.targetThreat.attackStep || tmStore.targetThreat.technique;
+        const entryPoint = `${tmStore.entryThreat.nodeName}:${entryStep}`;
+        const goal = `${tmStore.targetThreat.nodeName}:${goalStep}`;
         
         console.log(`[malsim] Running simulation: ${entryPoint} -> ${goal}`);
         
@@ -499,7 +501,7 @@ const startMalsimHandler = async () => {
         // 3. 완료 후 결과 조회
         if (status === 'completed') {
             const resultData = await import('@/service/mal/malApiService.js')
-                .then(module => module.getSimulationResult(sessionId));
+                .then(module => module.getSimulationResult(sessionId, { view: 'shortest' }));
             
             console.log('[malsim] Result:', resultData);
             
@@ -536,6 +538,12 @@ const startMalsimHandler = async () => {
                 attackPaths,
                 rawResult: resultData
             };
+
+            tmStore.upsertMalsimSession({
+                sessionId,
+                createdAt: resultData.created_at || new Date().toISOString(),
+                simulationResult: tmStore.malsimResult
+            });
             
             // 공격 경로 시각화
             visualizeMalsimResult(attackPaths);
@@ -681,7 +689,7 @@ const closeThreatModal = () => {
 };
 
 const onThreatSelected = (selection) => {
-    // selection: { nodeId, nodeName, threatId, technique, ttc }
+    // selection: { nodeId, nodeName, threatId, attackStep, technique, ttc }
     const mode = threatModalMode.value;
     
     if (mode === 'entry') {
@@ -706,7 +714,8 @@ const onThreatSelected = (selection) => {
     updateNodeStyles(selection.nodeId, mode);
     
     closeThreatModal();
-    toast.success(`${mode === 'entry' ? 'Entry' : 'Target'} set: ${selection.nodeName}:${selection.technique}`);
+    const selectedStep = selection.attackStep || selection.technique;
+    toast.success(`${mode === 'entry' ? 'Entry' : 'Target'} set: ${selection.nodeName}:${selectedStep}`);
     tmStore.setModified();
 };
 

@@ -169,11 +169,7 @@ export async function runSimulation(entryPoint, goal, marFile, modelFile, option
     if (options.seed !== undefined) formData.append('seed', options.seed);
     if (options.ttcMode !== undefined) formData.append('ttcMode', options.ttcMode);
 
-    const response = await malApiClient.post('/v1/simulation/run', formData, {
-        headers: {
-            'Content-Type': 'multipart/form-data'
-        }
-    });
+    const response = await malApiClient.post('/v1/simulation/shortest_path', formData);
 
     if (response.data.success) {
         return {
@@ -199,15 +195,66 @@ export async function getSimulationStatus(sessionId) {
     throw new Error(response.data.message || 'Failed to get simulation status');
 }
 
+function normalizeShortestPathResult(data) {
+    const result = data?.result || {};
+    const shortestPaths = result.shortest_paths || null;
+
+    if (!shortestPaths || !shortestPaths.agents) {
+        return data;
+    }
+
+    const attackPaths = {};
+    let attackPathFound = false;
+
+    Object.entries(shortestPaths.agents).forEach(([agentName, agentData]) => {
+        const goals = agentData?.goals || {};
+        const goalPaths = {};
+
+        Object.entries(goals).forEach(([goalName, goalData]) => {
+            const normalizedPath = Array.isArray(goalData?.full_path)
+                ? goalData.full_path
+                : (Array.isArray(goalData?.path) ? goalData.path : []);
+
+            goalPaths[goalName] = normalizedPath;
+
+            if (goalData?.path_found) {
+                attackPathFound = true;
+            }
+        });
+
+        attackPaths[agentName] = goalPaths;
+    });
+
+    return {
+        ...data,
+        result: {
+            ...result,
+            attack_path_found: attackPathFound,
+            attack_paths: attackPaths
+        }
+    };
+}
+
 /**
  * 시뮬레이션 결과 조회
  * @param {string} sessionId - Python 서버의 세션 ID
+ * @param {Object} options - 추가 옵션
+ * @param {string} options.view - 결과 뷰 타입 (예: "shortest")
  * @returns {Promise<Object>} 결과 정보
  */
-export async function getSimulationResult(sessionId) {
-    const response = await malApiClient.get(`/v1/simulation/${sessionId}/result`);
+export async function getSimulationResult(sessionId, options = {}) {
+    const params = {};
+
+    if (options.view) {
+        params.view = options.view;
+    }
+
+    const response = await malApiClient.get(`/v1/simulation/${sessionId}/result`, { params });
 
     if (response.data.success) {
+        if (options.view === 'shortest') {
+            return normalizeShortestPathResult(response.data.data);
+        }
         return response.data.data;
     }
     throw new Error(response.data.message || 'Failed to get simulation result');
@@ -224,4 +271,3 @@ export default {
     getSimulationStatus,
     getSimulationResult
 };
-

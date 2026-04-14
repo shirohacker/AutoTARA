@@ -21,6 +21,7 @@ const taraAssessmentController = require('../controllers/taraAssessmentControlle
 // MITRE 관련 라우트
 router.get('/v1/mitre/techniques', mitreController.getMitreTechniques);           // 전체 조회
 router.get('/v1/mitre/countermeasures', mitreController.getMitreCountermeasures);    // 전체 CM 반환
+router.get('/v1/mitre/attack-step-mapping', mitreController.getTechniqueMappingByAttackStep); // Attack Step -> MITRE 매핑
 router.get('/v1/mitre/threat/:id', mitreController.searchMitreThreatsByStencil); // 위협 검색
 router.get('/v1/mitre/technique/:id', mitreController.getMitreTechniqueById);// ID 상세 조회
 router.get('/v1/mitre/countermeasures/:id', mitreController.getMitigationsByTechniqueId); // 완화책 조회
@@ -56,8 +57,7 @@ router.post('/v1/mal/extract-assets', malController.extractAssets);
 
 // Simulation 관련 라우트
 // POST /api/v1/simulation/run - 시뮬레이션 실행
-// POST /api/v1/simulation/run - 시뮬레이션 실행
-router.post('/v1/simulation/run',
+router.post('/v1/simulation/shortest_path',
     upload.fields([
         { name: 'mar', maxCount: 1 },
         { name: 'model', maxCount: 1 }
@@ -94,4 +94,3 @@ router.put('/v1/tara/assessments/:id', taraAssessmentController.updateAssessment
 router.delete('/v1/tara/assessments/:id', taraAssessmentController.deleteAssessment);
 
 module.exports = router;
-

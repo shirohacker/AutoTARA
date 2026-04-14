@@ -92,7 +92,9 @@ function extractThreatsFromAsset(assetInfo, langspec) {
 
                 // 동일한 이름의 위협이 있으면 override (자식의 것으로 교체)
                 threatMap.set(step.name, {
+                    attackStep: step.name,
                     mitre_id: '',
+                    mitre_name: '',
                     technique: step.name,
                     status: 'open',
                     description: description,
@@ -505,4 +507,3 @@ module.exports = {
     findAssociationByField,
     extractAssetsFromMal,
 };
-

@@ -30,7 +30,7 @@
           >
             <div class="threat-header">
               <span class="threat-number">#{{ threat.number }}</span>
-              <span class="threat-technique">{{ threat.technique }}</span>
+              <span class="threat-technique">{{ threat.attackStep || threat.technique }}</span>
               <span v-if="threat.ttc > 0" class="threat-ttc">
                 <i class="fa-solid fa-clock me-1"></i>{{ threat.ttc }}
               </span>
@@ -114,6 +114,7 @@ const confirm = () => {
       nodeId: props.nodeId,
       nodeName: props.nodeName,
       threatId: selectedThreat.value.id,
+      attackStep: selectedThreat.value.attackStep || selectedThreat.value.technique,
       technique: selectedThreat.value.technique,
       ttc: selectedThreat.value.ttc
     });

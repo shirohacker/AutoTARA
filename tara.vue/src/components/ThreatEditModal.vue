@@ -66,6 +66,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, ref, onMounted } from 'vue'
+import axios from 'axios'
 import TaraCtsaTab from '@/components/TaraCtsaTab.vue'
 import TaraCrraTab from '@/components/TaraCrraTab.vue'
 import { useCellStore } from "@/stores/cellStore.js"
@@ -95,14 +96,48 @@ onMounted(() => {
  * @param threatId - v4() UUID
  * @param state - 'new' | 'exist'
  */
-const editThreat = (threatId, state) => {
+const hydrateMitreMapping = async (draftThreat) => {
+  if (!draftThreat || draftThreat.mitre_id) return;
+
+  const assetType = cellRef.value?.data?.malInfo?.assetType || draftThreat.source;
+  const stepName = draftThreat.attackStep || draftThreat.technique;
+
+  if (!assetType || !stepName) return;
+
+  try {
+    const res = await axios.get('/api/v1/mitre/attack-step-mapping', {
+      params: {
+        assetType,
+        stepName,
+      },
+    });
+
+    const [mapping] = res.data || [];
+    if (!mapping) return;
+
+    draftThreat.mitre_id = mapping.technique_id;
+    draftThreat.mitre_name = mapping.technique_name;
+  } catch (error) {
+    console.error('[ThreatEditModal] Failed to resolve MITRE mapping:', error);
+  }
+}
+
+const editThreat = async (threatId, state) => {
   activeTab.value = 'ctsa';
 
   const crnThreat = cellRef.value.data.threats.find(t => t.id === threatId);
-  threat.value = {...crnThreat}
   if (crnThreat) {
+    const editableThreat = {
+      ...crnThreat,
+      attackStep: crnThreat.attackStep || crnThreat.technique,
+      mitre_name: crnThreat.mitre_name || '',
+    };
+
+    await hydrateMitreMapping(editableThreat);
+
+    threat.value = { ...editableThreat }
     assetName.value = cellRef.value.label
-    editStore.startEditing(assetName.value, crnThreat, state);
+    editStore.startEditing(assetName.value, editableThreat, state);
     visible.value = true;
   }
 }
@@ -135,8 +170,9 @@ const handleApply = () => {
   const crnThreat = cellRef.value.data.threats.find(t => t.id === threat.value.id);
   const editStoreData = editStore.threatData;
   if (crnThreat) {
+    crnThreat.attackStep = editStoreData.attackStep || crnThreat.attackStep || crnThreat.technique
     crnThreat.mitre_id = editStoreData.mitre_id
-    crnThreat.technique = editStore.threatData.technique
+    crnThreat.mitre_name = editStoreData.mitre_name || ''
     crnThreat.status = editStore.threatData.status
     crnThreat.description = editStore.threatData.description
     crnThreat.riskScore = editStore.threatData.riskScore

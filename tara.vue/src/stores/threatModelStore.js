@@ -34,6 +34,7 @@ export const useThreatModelStore = defineStore('threatmodel', {
         entryThreat: null, // { nodeId, nodeName, threatId, technique, ttc }
         targetThreat: null, // { nodeId, nodeName, threatId, technique, ttc }
         malsimResult: null, // malsim 실행 결과 { attackPath, totalSteps, ... }
+        malsimSessions: [], // [{ sessionId, createdAt, simulationResult }]
         isSimulating: false // 시뮬레이션 실행 중 여부
     }),
 
@@ -81,6 +82,7 @@ export const useThreatModelStore = defineStore('threatmodel', {
             this.entryThreat = null;
             this.targetThreat = null;
             this.malsimResult = null;
+            this.malsimSessions = [];
         },
 
         async save() {  // 전체 모델 저장
@@ -129,9 +131,33 @@ export const useThreatModelStore = defineStore('threatmodel', {
                 console.debug(`[ThreatModelStore] Cell(${cellId}) data synced to modifiedDiagram.`);
             }
         },
+
+        upsertMalsimSession(sessionData) {
+            if (!sessionData?.sessionId) return;
+
+            const nextSession = {
+                sessionId: sessionData.sessionId,
+                createdAt: sessionData.createdAt || new Date().toISOString(),
+                simulationResult: sessionData.simulationResult || null
+            };
+
+            const index = this.malsimSessions.findIndex(
+                (item) => item.sessionId === sessionData.sessionId
+            );
+
+            if (index === -1) {
+                this.malsimSessions.unshift(nextSession);
+                return;
+            }
+
+            this.malsimSessions[index] = {
+                ...this.malsimSessions[index],
+                ...nextSession
+            };
+        },
     },
     persist: {
         storage: localStorage,
-        paths: ['data', 'fileName']
+        paths: ['data', 'fileName', 'malsimResult', 'malsimSessions']
     },
 });

@@ -31,7 +31,7 @@ const runSimulation = async (req, res) => {
             goal,
             seed = 42,
             ttcMode = 0
-        } = req.body;
+        } = req.body || {};
 
         // 파일 확인
         const marFile = req.files && req.files['mar'] ? req.files['mar'][0] : null;
@@ -201,8 +201,9 @@ const getSimulationStatus = async (req, res) => {
 const getSimulationResult = async (req, res) => {
     try {
         const { sessionId } = req.params;
+        const { view } = req.query;
 
-        const result = await simulationService.getSimulationResult(sessionId);
+        const result = await simulationService.getSimulationResult(sessionId, view);
 
         if (result.success) {
             res.json({

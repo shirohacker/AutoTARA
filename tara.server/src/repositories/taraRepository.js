@@ -2,7 +2,7 @@ const db = require('../config/db');
 
 const getAssetDescription = async (assetName) => {
     const query = `
-        SELECT description_en AS description
+        SELECT description
         FROM mitre.dfds
         WHERE name ILIKE $1
         `;
