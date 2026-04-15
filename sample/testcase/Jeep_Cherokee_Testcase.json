@@ -1,0 +1,382 @@
+{
+    "metadata": {
+        "name": "Jeep_Testcase",
+        "langVersion": "2.0.1",
+        "langID": "org.mal-lang.vehicleLang",
+        "malVersion": "0.1.0-SNAPSHOT",
+        "MAL-Toolbox Version": "2.8.1",
+        "info": "Created by the mal-toolbox model python module."
+    },
+    "assets": {
+        "0": {
+            "name": "SensorOrActuator",
+            "type": "SensorOrActuator",
+            "associated_assets": {
+                "hardwarePlatform": {
+                    "4": "Steering System"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -731.0,
+                    "y": -590.0
+                }
+            }
+        },
+        "1": {
+            "name": "SensorOrActuator",
+            "type": "SensorOrActuator",
+            "associated_assets": {
+                "hardwarePlatform": {
+                    "5": "TPMS"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 36.0,
+                    "y": -574.0
+                }
+            }
+        },
+        "2": {
+            "name": "Firmware",
+            "type": "Firmware",
+            "associated_assets": {
+                "hardware": {
+                    "4": "Steering System"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -1065.0,
+                    "y": -368.0
+                }
+            }
+        },
+        "3": {
+            "name": "Firmware",
+            "type": "Firmware",
+            "associated_assets": {
+                "hardware": {
+                    "5": "TPMS"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 547.0,
+                    "y": -357.0
+                }
+            }
+        },
+        "4": {
+            "name": "Steering System",
+            "type": "ECU",
+            "associated_assets": {
+                "sensorsOrActuators": {
+                    "0": "SensorOrActuator"
+                },
+                "firmware": {
+                    "2": "Firmware"
+                },
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -743.0,
+                    "y": -369.0
+                }
+            }
+        },
+        "5": {
+            "name": "TPMS",
+            "type": "ECU",
+            "associated_assets": {
+                "sensorsOrActuators": {
+                    "1": "SensorOrActuator"
+                },
+                "firmware": {
+                    "3": "Firmware"
+                },
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 47.0,
+                    "y": -357.0
+                }
+            }
+        },
+        "6": {
+            "name": "CANNetwork:6",
+            "type": "CANNetwork",
+            "associated_assets": {
+                "networkECUs": {
+                    "11": "IOC (V850)",
+                    "7": "Braking System",
+                    "5": "TPMS",
+                    "10": "Engine Control",
+                    "9": "Acc",
+                    "4": "Steering System",
+                    "8": "PAM"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -319.0,
+                    "y": -141.0
+                }
+            }
+        },
+        "7": {
+            "name": "Braking System",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -955.0,
+                    "y": -218.0
+                }
+            }
+        },
+        "8": {
+            "name": "PAM",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -948.0,
+                    "y": -92.0
+                }
+            }
+        },
+        "9": {
+            "name": "Acc",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 297.0,
+                    "y": -194.0
+                }
+            }
+        },
+        "10": {
+            "name": "Engine Control",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 267.0,
+                    "y": -75.0
+                }
+            }
+        },
+        "11": {
+            "name": "IOC (V850)",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "6": "CANNetwork:6",
+                    "13": "SPI"
+                },
+                "firmware": {
+                    "12": "IOC Firmware"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -312.0,
+                    "y": 70.5
+                }
+            }
+        },
+        "12": {
+            "name": "IOC Firmware",
+            "type": "Firmware",
+            "associated_assets": {
+                "hardware": {
+                    "11": "IOC (V850)"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -942.0,
+                    "y": 60.0
+                }
+            }
+        },
+        "13": {
+            "name": "SPI",
+            "type": "VehicleNetwork",
+            "associated_assets": {
+                "networkECUs": {
+                    "11": "IOC (V850)",
+                    "14": "BCM"
+                },
+                "infotainment": {
+                    "17": "Uconnect Radio"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -312.0,
+                    "y": 288.0
+                }
+            }
+        },
+        "14": {
+            "name": "BCM",
+            "type": "ECU",
+            "associated_assets": {
+                "vehiclenetworks": {
+                    "15": "CAN-IHS",
+                    "16": "LINNetwork",
+                    "13": "SPI"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 243.0,
+                    "y": 289.5
+                }
+            }
+        },
+        "15": {
+            "name": "CAN-IHS",
+            "type": "CANNetwork",
+            "associated_assets": {
+                "networkECUs": {
+                    "14": "BCM"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 237.0,
+                    "y": 129.0
+                }
+            }
+        },
+        "16": {
+            "name": "LINNetwork",
+            "type": "LINNetwork",
+            "associated_assets": {
+                "networkECUs": {
+                    "14": "BCM"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": 255.0,
+                    "y": 484.5
+                }
+            }
+        },
+        "17": {
+            "name": "Uconnect Radio",
+            "type": "InfotainmentSystem",
+            "associated_assets": {
+                "connectedNetworks": {
+                    "13": "SPI"
+                },
+                "connectPrivileges": {
+                    "18": "Superuser"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -304.5,
+                    "y": 486.0
+                }
+            }
+        },
+        "18": {
+            "name": "Superuser",
+            "type": "VehicularIdentity",
+            "associated_assets": {
+                "connectMachines": {
+                    "17": "Uconnect Radio"
+                },
+                "assignedApplications": {
+                    "21": "D-BUS"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -298.5,
+                    "y": 651.0
+                }
+            }
+        },
+        "21": {
+            "name": "D-BUS",
+            "type": "NetworkAccessService",
+            "associated_assets": {
+                "assignedVehicularIdentity": {
+                    "18": "Superuser"
+                },
+                "networks": {
+                    "22": "Network:22"
+                },
+                "vulnerabilities": {
+                    "23": "SoftwareVulnerability"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -744.0,
+                    "y": 487.5
+                }
+            }
+        },
+        "22": {
+            "name": "Network:22",
+            "type": "Network",
+            "associated_assets": {
+                "applications": {
+                    "21": "D-BUS"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -768.0,
+                    "y": 648.0
+                }
+            }
+        },
+        "23": {
+            "name": "SoftwareVulnerability",
+            "type": "SoftwareVulnerability",
+            "associated_assets": {
+                "application": {
+                    "21": "D-BUS"
+                }
+            },
+            "extras": {
+                "position": {
+                    "x": -1158.0,
+                    "y": 490.5
+                }
+            }
+        }
+    }
+}
