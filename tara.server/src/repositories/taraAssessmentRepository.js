@@ -83,6 +83,22 @@ const updateAssessment = async (id, data) => {
     return rows[0];
 };
 
+const updateAssessmentAttackPath = async (id, attackPath) => {
+    const query = `
+        UPDATE tara.tara_assessments
+        SET attack_path = $1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = $2
+        RETURNING *
+    `;
+    const values = [
+        JSON.stringify(attackPath),
+        id
+    ];
+    const { rows } = await db.query(query, values);
+    return rows[0];
+};
+
 const deleteAssessment = async (id) => {
     const query = `DELETE FROM tara.tara_assessments WHERE id = $1 RETURNING *`;
     const { rows } = await db.query(query, [id]);
@@ -102,6 +118,7 @@ module.exports = {
     getAssessmentsBySessionId,
     getAssessmentById,
     updateAssessment,
+    updateAssessmentAttackPath,
     deleteAssessment,
     deleteAssessmentsBySessionId
 };

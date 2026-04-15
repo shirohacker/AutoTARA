@@ -13,6 +13,18 @@
       </div>
 
       <div v-else>
+        <div v-if="vehicleLangAssetName" class="mb-3">
+          <label class="form-label small fw-bold text-uppercase text-muted">
+            MAL Asset
+          </label>
+          <input
+              :value="vehicleLangAssetName"
+              type="text"
+              class="form-control form-control-sm bg-light"
+              readonly
+          >
+        </div>
+
         <div class="mb-3">
           <label for="name" class="form-label small fw-bold text-uppercase text-muted">
             Asset Name
@@ -89,6 +101,7 @@ const cellStore = useCellStore();
 const { ref: cellRef } = storeToRefs(cellStore);
 
 const assetName = ref('');
+const vehicleLangAssetName = ref('');
 const description = ref('');
 const outOfScope = ref(false);
 const reasonOutOfScope = ref('');
@@ -96,11 +109,13 @@ const reasonOutOfScope = ref('');
 watch(cellRef, (newCell) => {
   if (newCell && cellRef.value.data) {
     assetName.value = cellRef.value.data.name || '';
+    vehicleLangAssetName.value = cellRef.value.data.malInfo?.assetType || '';
     description.value = cellRef.value.data.description || '';
     outOfScope.value = cellRef.value.data.outOfScope || false;
     reasonOutOfScope.value = cellRef.value.data.reasonOutOfScope || '';
   } else {
     assetName.value = '';
+    vehicleLangAssetName.value = '';
     description.value = '';
     outOfScope.value = false;
     reasonOutOfScope.value = '';
@@ -119,6 +134,7 @@ const syncFromCell = () => {
 
     // 로컬 변수 업데이트 -> 화면이 즉시 바뀜
     assetName.value = data.name || '';
+    vehicleLangAssetName.value = data.malInfo?.assetType || '';
     description.value = data.description || '';
     outOfScope.value = data.outOfScope || false;
     reasonOutOfScope.value = data.reasonOutOfScope || '';
@@ -144,6 +160,7 @@ watch(cellRef, (newCell, oldCell) => {
   } else {
     // 선택 해제 시 초기화
     assetName.value = '';
+    vehicleLangAssetName.value = '';
     description.value = '';
     outOfScope.value = false;
     reasonOutOfScope.value = '';

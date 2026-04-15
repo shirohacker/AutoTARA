@@ -155,6 +155,13 @@ export const useThreatModelStore = defineStore('threatmodel', {
                 ...nextSession
             };
         },
+
+        removeMalsimSession(sessionId) {
+            if (!sessionId) return;
+            this.malsimSessions = this.malsimSessions.filter(
+                (item) => item.sessionId !== sessionId
+            );
+        },
     },
     persist: {
         storage: localStorage,

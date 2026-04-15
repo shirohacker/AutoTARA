@@ -8,6 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const { randomUUID } = require('crypto');
 const taraAssessmentRepository = require('../repositories/taraAssessmentRepository');
 
 const GEMINI_API_BASE_URL = process.env.GEMINI_API_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
@@ -192,31 +193,20 @@ async function analyzeThreatWithLLM(simulationResult, sessionId) {
         shortestPathContext
     );
 
-    await taraAssessmentRepository.deleteAssessmentsBySessionId(sessionId);
-
-    const saved = await taraAssessmentRepository.createAssessment({
-        session_id: sessionId,
-        entry_asset: normalizedScenario.Entry_Asset,
-        target_asset: normalizedScenario.Target_Asset,
-        cia_attribute: normalizedScenario.CIA_Attribute,
-        damage_scenario: normalizedScenario.Damage_Scenario,
-        impact_category: normalizedScenario.Impact_Category,
-        threat_scenario: normalizedScenario.Threat_Scenario,
-        attack_path: {
-            source_shortest_path: shortestPathContext.originalPath,
-            generated_attack_paths: normalizedScenario.Attack_Path,
-            scenario_linkage_check: normalizedScenario.Scenario_Linkage_Check
-        }
+    const assessmentRows = buildAssessmentRowsFromScenario({
+        sessionId,
+        normalizedScenario,
+        sourceShortestPath: shortestPathContext.originalPath
     });
 
-    console.log(`[TaraAssessmentService] 1 assessment created for session ${sessionId}`);
+    const saved = await taraAssessmentRepository.createAssessments(assessmentRows);
 
-    return [
-        {
-            ...saved,
-            llm_result: normalizedScenario
-        }
-    ];
+    console.log(`[TaraAssessmentService] ${saved.length} assessments created for session ${sessionId}`);
+
+    return saved.map((item) => ({
+        ...item,
+        llm_result: normalizedScenario
+    }));
 }
 
 async function verifyScenarioWithGemini({
@@ -578,6 +568,54 @@ function normalizeVerifiedPaths(value) {
     return normalized;
 }
 
+function buildAssessmentRowsFromScenario({
+    sessionId,
+    normalizedScenario,
+    sourceShortestPath
+}) {
+    const analysisBatchId = randomUUID();
+    const generatedPaths = normalizedScenario?.Attack_Path || {};
+    const pathEntries = Object.entries(generatedPaths)
+        .filter(([, pathValue]) => pathValue && typeof pathValue === 'object')
+        .sort(([leftKey], [rightKey]) => comparePathKeys(leftKey, rightKey));
+
+    if (pathEntries.length === 0) {
+        return [{
+            session_id: sessionId,
+            entry_asset: normalizedScenario.Entry_Asset,
+            target_asset: normalizedScenario.Target_Asset,
+            cia_attribute: normalizedScenario.CIA_Attribute,
+            damage_scenario: normalizedScenario.Damage_Scenario,
+            impact_category: normalizedScenario.Impact_Category,
+            threat_scenario: normalizedScenario.Threat_Scenario,
+            attack_path: {
+                analysis_batch_id: analysisBatchId,
+                source_shortest_path: sourceShortestPath,
+                generated_attack_paths: {},
+                scenario_linkage_check: normalizedScenario.Scenario_Linkage_Check
+            }
+        }];
+    }
+
+    return pathEntries.map(([pathKey, pathValue]) => ({
+        session_id: sessionId,
+        entry_asset: normalizedScenario.Entry_Asset,
+        target_asset: normalizedScenario.Target_Asset,
+        cia_attribute: normalizedScenario.CIA_Attribute,
+        damage_scenario: normalizedScenario.Damage_Scenario,
+        impact_category: normalizedScenario.Impact_Category,
+        threat_scenario: normalizedScenario.Threat_Scenario,
+        attack_path: {
+            analysis_batch_id: analysisBatchId,
+            source_shortest_path: sourceShortestPath,
+            generated_attack_paths: {
+                [pathKey]: pathValue
+            },
+            scenario_linkage_check: normalizedScenario.Scenario_Linkage_Check
+        }
+    }));
+}
+
 function normalizeVerifiedPath(pathValue) {
     return {
         Realism_Assessment: pickValue(pathValue, 'Realism_Assessment') || 'Plausible with gaps',
@@ -710,8 +748,70 @@ async function updateAssessment(id, data) {
     return taraAssessmentRepository.updateAssessment(id, data);
 }
 
+function parseAttackPathPayload(attackPath) {
+    if (!attackPath) return null;
+
+    if (typeof attackPath === 'string') {
+        try {
+            return JSON.parse(attackPath);
+        } catch (error) {
+            throw new Error('Failed to parse assessment attack_path JSON.');
+        }
+    }
+
+    return attackPath;
+}
+
+async function deleteAttackPathFromAssessment(id, attackPathKey) {
+    const assessment = await taraAssessmentRepository.getAssessmentById(id);
+    if (!assessment) {
+        return null;
+    }
+
+    const parsedAttackPath = parseAttackPathPayload(assessment.attack_path);
+    const generatedAttackPaths = parsedAttackPath?.generated_attack_paths;
+    const hasGeneratedPaths =
+        generatedAttackPaths &&
+        typeof generatedAttackPaths === 'object' &&
+        !Array.isArray(generatedAttackPaths);
+
+    if (!hasGeneratedPaths || String(attackPathKey || '').startsWith('assessment_')) {
+        const deleted = await taraAssessmentRepository.deleteAssessment(id);
+        return deleted
+            ? { action: 'deleted', assessment: deleted }
+            : null;
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(generatedAttackPaths, attackPathKey)) {
+        throw new Error(`Attack path ${attackPathKey} not found in assessment ${id}.`);
+    }
+
+    const remainingAttackPaths = { ...generatedAttackPaths };
+    delete remainingAttackPaths[attackPathKey];
+
+    if (Object.keys(remainingAttackPaths).length === 0) {
+        const deleted = await taraAssessmentRepository.deleteAssessment(id);
+        return deleted
+            ? { action: 'deleted', assessment: deleted }
+            : null;
+    }
+
+    const updated = await taraAssessmentRepository.updateAssessmentAttackPath(id, {
+        ...parsedAttackPath,
+        generated_attack_paths: remainingAttackPaths
+    });
+
+    return updated
+        ? { action: 'updated', assessment: updated }
+        : null;
+}
+
 async function deleteAssessment(id) {
     return taraAssessmentRepository.deleteAssessment(id);
+}
+
+async function deleteAssessmentsBySessionId(sessionId) {
+    return taraAssessmentRepository.deleteAssessmentsBySessionId(sessionId);
 }
 
 module.exports = {
@@ -720,5 +820,7 @@ module.exports = {
     getAssessmentsBySessionId,
     getAssessmentById,
     updateAssessment,
-    deleteAssessment
+    deleteAttackPathFromAssessment,
+    deleteAssessment,
+    deleteAssessmentsBySessionId
 };

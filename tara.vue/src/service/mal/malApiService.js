@@ -260,6 +260,19 @@ export async function getSimulationResult(sessionId, options = {}) {
     throw new Error(response.data.message || 'Failed to get simulation result');
 }
 
+/**
+ * 시뮬레이션 세션 삭제
+ * @param {string} sessionId - 시뮬레이션 세션 ID
+ * @returns {Promise<void>}
+ */
+export async function deleteSimulationSession(sessionId) {
+    const response = await malApiClient.delete(`/v1/simulation/session/${sessionId}`);
+
+    if (!response.data.success) {
+        throw new Error(response.data.message || 'Failed to delete simulation session');
+    }
+}
+
 export default {
     convertMalToDfd,
     convertMalToDfdDirect,
@@ -269,5 +282,6 @@ export default {
     convertMalToDfdWithShapes,
     runSimulation,
     getSimulationStatus,
-    getSimulationResult
+    getSimulationResult,
+    deleteSimulationSession
 };

@@ -90,6 +90,12 @@ router.get('/v1/tara/assessments/:id', taraAssessmentController.getAssessmentByI
 // PUT /api/v1/tara/assessments/:id - 수정 (사용자 입력 필드)
 router.put('/v1/tara/assessments/:id', taraAssessmentController.updateAssessment);
 
+// DELETE /api/v1/tara/assessments/:id/attack-path/:pathKey - attack path 단위 삭제
+router.delete('/v1/tara/assessments/:id/attack-path/:pathKey', taraAssessmentController.deleteAttackPath);
+
+// DELETE /api/v1/tara/assessments/session/:sessionId - 세션 단위 삭제
+router.delete('/v1/tara/assessments/session/:sessionId', taraAssessmentController.deleteAssessmentsBySessionId);
+
 // DELETE /api/v1/tara/assessments/:id - 삭제
 router.delete('/v1/tara/assessments/:id', taraAssessmentController.deleteAssessment);
 

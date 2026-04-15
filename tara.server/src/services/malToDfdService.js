@@ -86,8 +86,11 @@ function extractThreatsFromAsset(assetInfo, langspec) {
                 // ttc 값 추출: ttc.name이 "Exponential"이면 arguments[0] 값에 100을 곱함
                 let ttcValue = 0;
                 if (step.ttc?.type === 'function' && step.ttc?.name === 'Exponential') {
-                    const rawValue = step.ttc.arguments?.[0] || 0;
-                    ttcValue = rawValue * 100;
+                const rate = Number(step.ttc.arguments?.[0]);
+
+                if (Number.isFinite(rate) && rate > 0) {
+                    ttcValue = 1 / rate;
+                }
                 }
 
                 // 동일한 이름의 위협이 있으면 override (자식의 것으로 교체)

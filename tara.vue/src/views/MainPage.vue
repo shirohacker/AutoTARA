@@ -5,13 +5,13 @@
       Auto TARA
     </h1>
     <h2 class="display-6 fw-bold text-body-emphasis">
-      Automated Threat Assessment & Remediation Analysis Simulator
+      Automated Threat Analysis and Risk Assessment Simulator
     </h2>
     <div class="col-lg-6 mx-auto">
       <p class="lead mb-4">
         <b>AutoTARA</b> revolutionizes threat modeling by automating the end-to-end TARA framework.
         Built on a customizable, <b>MITRE ATT&CK-powered catalog</b>, it moves beyond static analysis to identify
-        vulnerabilities in cloud-native environments. Visualize complex attack simulations,
+        vulnerabilities in Automotive environments. Visualize complex attack simulations,
         automatically prioritize threats, and calculate optimal remediation strategies to find the
         fastest path to compromise before attackers do.
       </p>

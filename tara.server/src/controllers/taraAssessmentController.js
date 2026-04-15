@@ -140,6 +140,38 @@ const updateAssessment = async (req, res) => {
 };
 
 /**
+ * DELETE /api/v1/tara/assessments/:id/attack-path/:pathKey
+ * assessment 내부의 특정 attack path만 삭제
+ */
+const deleteAttackPath = async (req, res) => {
+    try {
+        const { id, pathKey } = req.params;
+        const result = await taraAssessmentService.deleteAttackPathFromAssessment(id, pathKey);
+
+        if (!result) {
+            return res.status(404).json({
+                success: false,
+                message: `Assessment ${id} not found`
+            });
+        }
+
+        res.json({
+            success: true,
+            data: result,
+            message: result.action === 'deleted'
+                ? `Attack path ${pathKey} deleted and assessment ${id} removed`
+                : `Attack path ${pathKey} deleted from assessment ${id}`
+        });
+    } catch (err) {
+        console.error('[TaraAssessmentController] DeleteAttackPath error:', err);
+        res.status(500).json({
+            success: false,
+            message: err.message || 'Failed to delete attack path'
+        });
+    }
+};
+
+/**
  * DELETE /api/v1/tara/assessments/:id
  * 평가 결과 삭제
  */
@@ -168,10 +200,38 @@ const deleteAssessment = async (req, res) => {
     }
 };
 
+/**
+ * DELETE /api/v1/tara/assessments/session/:sessionId
+ * 세션에 속한 평가 결과를 모두 삭제
+ */
+const deleteAssessmentsBySessionId = async (req, res) => {
+    try {
+        const { sessionId } = req.params;
+        const deleted = await taraAssessmentService.deleteAssessmentsBySessionId(sessionId);
+
+        res.json({
+            success: true,
+            data: {
+                sessionId,
+                deletedCount: deleted.length
+            },
+            message: `${deleted.length} assessments deleted for session ${sessionId}`
+        });
+    } catch (err) {
+        console.error('[TaraAssessmentController] DeleteBySession error:', err);
+        res.status(500).json({
+            success: false,
+            message: err.message || 'Failed to delete assessments by session'
+        });
+    }
+};
+
 module.exports = {
     analyzeThreats,
     getAllAssessments,
     getAssessmentById,
     updateAssessment,
-    deleteAssessment
+    deleteAttackPath,
+    deleteAssessment,
+    deleteAssessmentsBySessionId
 };

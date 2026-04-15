@@ -22,8 +22,8 @@
     </div>
 
     <div v-else-if="sessions.length > 0" class="row g-4">
-      <div class="col-xl-3 col-lg-4">
-        <div class="border rounded bg-white">
+      <div class="col-12 col-lg-4 col-xl-3">
+        <div class="border rounded bg-white overflow-hidden session-sidebar">
           <div class="px-3 py-2 border-bottom fw-semibold">
             Simulation Sessions
           </div>
@@ -59,7 +59,7 @@
         </div>
       </div>
 
-      <div class="col-xl-9 col-lg-8">
+      <div class="col-12 col-lg-8 col-xl-9">
         <template v-if="selectedSessionSummary">
           <div class="border rounded bg-white mb-4">
             <div class="px-3 py-3 border-bottom">
@@ -77,7 +77,7 @@
                     v-if="canExpandSelectedSession"
                     class="btn btn-primary"
                     @click="expandSelectedSessionAttackPaths"
-                    :disabled="isExpandingSelectedSession"
+                    :disabled="isExpandingSelectedSession || isDeletingSelectedSession"
                   >
                     <span
                       v-if="isExpandingSelectedSession"
@@ -85,14 +85,20 @@
                       role="status"
                     ></span>
                     <i v-else class="fa-solid fa-wand-magic-sparkles me-1"></i>
-                    Expand Attack Paths
+                    {{ selectedSessionSummary.hasAnalysis ? 'Rebuild Expanded Attack Paths' : 'Expand Attack Paths' }}
                   </button>
                   <button
-                    v-if="selectedSessionAttackPath"
-                    class="btn btn-outline-info"
-                    @click="showAttackPath({ attack_path: selectedSessionAttackPath })"
+                    class="btn btn-outline-danger"
+                    @click="deleteSelectedSession"
+                    :disabled="isDeletingSelectedSession || isExpandingSelectedSession"
                   >
-                    <i class="fa-solid fa-route me-1"></i> View Detail
+                    <span
+                      v-if="isDeletingSelectedSession"
+                      class="spinner-border spinner-border-sm me-1"
+                      role="status"
+                    ></span>
+                    <i v-else class="fa-solid fa-trash me-1"></i>
+                    Delete Session
                   </button>
                 </div>
               </div>
@@ -117,22 +123,28 @@
               </div>
 
               <div class="mb-4">
-                <h5 class="mb-3">Shortest Path</h5>
+                <details class="collapsible-section">
+                  <summary class="h5 mb-0 py-1">
+                    <span>Shortest Path</span>
+                  </summary>
 
-                <div v-if="shortestPathSteps.length > 0" class="list-group">
-                  <div
-                    v-for="(step, idx) in shortestPathSteps"
-                    :key="`shortest-${idx}`"
-                    class="list-group-item"
-                  >
-                    <span class="badge bg-primary me-2">{{ step.step || idx + 1 }}</span>
-                    <strong>{{ step.assetName }}</strong>
-                    <span class="text-muted ms-1">: {{ step.attackStep }}</span>
+                  <div class="pt-3">
+                    <div v-if="shortestPathSteps.length > 0" class="list-group">
+                      <div
+                        v-for="(step, idx) in shortestPathSteps"
+                        :key="`shortest-${idx}`"
+                        class="list-group-item"
+                      >
+                        <span class="badge bg-primary me-2">{{ step.step || idx + 1 }}</span>
+                        <strong>{{ step.assetName }}</strong>
+                        <span class="text-muted ms-1">: {{ step.attackStep }}</span>
+                      </div>
+                    </div>
+                    <div v-else class="text-muted small">
+                      No shortest path data available.
+                    </div>
                   </div>
-                </div>
-                <div v-else class="text-muted small">
-                  No shortest path data available.
-                </div>
+                </details>
               </div>
 
               <div class="mb-3">
@@ -143,7 +155,6 @@
                     v-for="(path, pathIndex) in generatedPathEntries"
                     :key="path.key"
                     class="border rounded bg-light-subtle"
-                    :open="pathIndex === 0"
                   >
                     <summary class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-3 py-3">
                       <div class="d-flex flex-wrap gap-2 align-items-center">
@@ -241,81 +252,141 @@
               Session Assessments
             </div>
 
-            <div v-if="selectedSessionAssessments.length > 0" class="table-responsive">
-              <table class="table table-bordered table-hover align-middle mb-0">
+            <div v-if="selectedSessionAssessmentGroups.length > 0" class="table-responsive">
+              <table class="table table-bordered table-hover align-middle mb-0 assessment-table">
                 <thead class="table-dark">
                   <tr>
-                    <th style="width: 40px">#</th>
+                    <th style="width: 88px">#</th>
                     <th>Target Asset</th>
-                    <th>CIA</th>
+                    <th class="cia-column">CIA</th>
                     <th>Damage Scenario</th>
-                    <th>Impact</th>
+                    <th class="impact-column">Impact</th>
                     <th>Threat Scenario</th>
-                    <th>Attack Path</th>
-                    <th>Attack Feasibility</th>
-                    <th>Impact Rating</th>
-                    <th>Risk Treatment</th>
-                    <th>CAL</th>
-                    <th style="width: 60px">Actions</th>
+                    <th class="attack-path-column">Attack Path</th>
+                    <th class="assessment-panel-column">Assessment</th>
+                    <th class="actions-column">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr v-for="(item, idx) in selectedSessionAssessments" :key="item.id">
-                    <td>{{ idx + 1 }}</td>
-                    <td>{{ item.target_asset }}</td>
-                    <td>
-                      <span class="badge" :class="ciaBadgeClass(item.cia_attribute)">
-                        {{ item.cia_attribute }}
-                      </span>
-                    </td>
-                    <td style="max-width: 200px" :title="item.damage_scenario">
-                      {{ item.damage_scenario }}
-                    </td>
-                    <td>
-                      <span class="badge bg-secondary">{{ item.impact_category }}</span>
-                    </td>
-                    <td style="max-width: 220px" :title="item.threat_scenario">
-                      {{ item.threat_scenario }}
-                    </td>
-                    <td class="text-center">
-                      <button class="btn btn-sm btn-outline-info" @click="showAttackPath(item)">
-                        <i class="fa-solid fa-route"></i> View
-                      </button>
-                    </td>
-                    <td>
-                      <EditableDropdown
-                        :modelValue="item.attack_feasibility || ''"
-                        :options="feasibilityOptions"
-                        @update:modelValue="onFieldUpdate(item, 'attack_feasibility', $event)"
-                      />
-                    </td>
-                    <td>
-                      <EditableDropdown
-                        :modelValue="item.impact_rating || ''"
-                        :options="impactRatingOptions"
-                        @update:modelValue="onFieldUpdate(item, 'impact_rating', $event)"
-                      />
-                    </td>
-                    <td>
-                      <EditableDropdown
-                        :modelValue="item.risk_treatment || ''"
-                        :options="riskTreatmentOptions"
-                        @update:modelValue="onFieldUpdate(item, 'risk_treatment', $event)"
-                      />
-                    </td>
-                    <td>
-                      <EditableDropdown
-                        :modelValue="item.cal_rating || ''"
-                        :options="calOptions"
-                        @update:modelValue="onFieldUpdate(item, 'cal_rating', $event)"
-                      />
-                    </td>
-                    <td class="text-center">
-                      <button class="btn btn-sm btn-outline-danger" @click="confirmDelete(item.id)">
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
+                  <template v-for="group in selectedSessionAssessmentGroups" :key="group.groupKey">
+                    <tr
+                      v-for="(row, rowIndex) in group.rows"
+                      :key="row.rowKey"
+                      :class="{ 'group-divider': rowIndex === 0 && group.displayIndex > 1 }"
+                    >
+                      <td v-if="rowIndex === 0" :rowspan="group.rowSpan" class="align-top">
+                        <div class="fw-semibold">{{ group.displayIndex }}</div>
+                        <div class="small text-muted">{{ formatDate(group.createdAt) }}</div>
+                      </td>
+                      <td v-if="rowIndex === 0" :rowspan="group.rowSpan" class="align-top">
+                        {{ group.target_asset }}
+                      </td>
+                      <td v-if="rowIndex === 0" :rowspan="group.rowSpan" class="align-top cia-cell">
+                        <span class="badge compact-badge" :class="ciaBadgeClass(group.cia_attribute)">
+                          {{ group.cia_attribute }}
+                        </span>
+                      </td>
+                      <td
+                        v-if="rowIndex === 0"
+                        :rowspan="group.rowSpan"
+                        class="align-top"
+                        style="max-width: 200px"
+                        :title="group.damage_scenario"
+                      >
+                        {{ group.damage_scenario }}
+                      </td>
+                      <td v-if="rowIndex === 0" :rowspan="group.rowSpan" class="align-top impact-cell">
+                        <span class="badge bg-secondary compact-badge">{{ group.impact_category }}</span>
+                      </td>
+                      <td
+                        v-if="rowIndex === 0"
+                        :rowspan="group.rowSpan"
+                        class="align-top"
+                        style="max-width: 220px"
+                        :title="group.threat_scenario"
+                      >
+                        {{ group.threat_scenario }}
+                      </td>
+                      <td class="align-top">
+                        <div class="attack-path-inline">
+                          <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                            <span class="badge text-bg-light border">{{ row.attackPathLabel }}</span>
+                            <span class="badge bg-secondary">{{ row.attackPathRealism }}</span>
+                            <span class="badge bg-primary">Score {{ row.attackPathScore }}/5</span>
+                          </div>
+                          <div v-if="row.attackPathSteps.length > 0" class="attack-path-steps">
+                            <div
+                              v-for="step in row.attackPathSteps"
+                              :key="`${row.rowKey}-${step.label}`"
+                              class="attack-path-step"
+                            >
+                              <span class="attack-path-step-label">({{ step.label }})</span>
+                              <span>{{ step.text }}</span>
+                            </div>
+                          </div>
+                          <div v-else class="small text-break">
+                            {{ row.attackPathText || 'N/A' }}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="assessment-panel">
+                          <div class="assessment-field">
+                            <div class="assessment-field-label">Attack Feasibility</div>
+                            <div class="d-grid gap-2">
+                              <button
+                                type="button"
+                                class="btn btn-sm btn-outline-primary assessment-action-button"
+                                @click="openAttackFeasibilityModal(row)"
+                              >
+                                {{ row.attackFeasibilityTotal !== null ? 'Edit Details' : 'Assess Details' }}
+                              </button>
+                              <div class="assessment-feasibility-summary">
+                                <span
+                                  class="badge compact-badge"
+                                  :class="row.attackFeasibilityTotal !== null ? 'bg-primary' : 'bg-secondary'"
+                                >
+                                  {{ formatAttackFeasibilitySummary(row) }}
+                                </span>
+                                <div v-if="row.attackFeasibilityLegacyLabel" class="assessment-helper-text">
+                                  Legacy: {{ row.attackFeasibilityLegacyLabel }}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="assessment-field">
+                            <div class="assessment-field-label">Impact Rating</div>
+                            <EditableDropdown
+                              :modelValue="row.impact_rating || ''"
+                              :options="impactRatingOptions"
+                              @update:modelValue="onFieldUpdate(row.sourceAssessment, 'impact_rating', $event)"
+                            />
+                          </div>
+                          <div class="assessment-field">
+                            <div class="assessment-field-label">Risk Treatment</div>
+                            <EditableDropdown
+                              :modelValue="row.risk_treatment || ''"
+                              :options="riskTreatmentOptions"
+                              @update:modelValue="onFieldUpdate(row.sourceAssessment, 'risk_treatment', $event)"
+                            />
+                          </div>
+                          <div class="assessment-field">
+                            <div class="assessment-field-label">CAL</div>
+                            <EditableDropdown
+                              :modelValue="row.cal_rating || ''"
+                              :options="calOptions"
+                              @update:modelValue="onFieldUpdate(row.sourceAssessment, 'cal_rating', $event)"
+                            />
+                          </div>
+                        </div>
+                      </td>
+                      <td class="text-center actions-cell">
+                        <button class="btn btn-sm btn-outline-danger actions-button" @click="confirmDeleteAttackPath(row)">
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </template>
                 </tbody>
               </table>
             </div>
@@ -334,7 +405,12 @@
       <p>Run malsim in the Diagram Editor to create a session.</p>
     </div>
 
-    <AttackPathModal ref="attackPathModal" :attackPath="selectedAttackPath" />
+    <AttackFeasibilityModal
+      :show="isAttackFeasibilityModalOpen"
+      :assessmentRow="selectedAttackFeasibilityRow"
+      @save="saveAttackFeasibilityDetail"
+      @cancel="closeAttackFeasibilityModal"
+    />
   </div>
 </template>
 
@@ -343,26 +419,33 @@ import { computed, onMounted, ref, watch } from 'vue';
 import { useTaraAssessmentStore } from '@/stores/taraAssessmentStore.js';
 import { useThreatModelStore } from '@/stores/threatModelStore.js';
 import EditableDropdown from '@/components/tara/EditableDropdown.vue';
-import AttackPathModal from '@/components/tara/AttackPathModal.vue';
+import AttackFeasibilityModal from '@/components/tara/AttackFeasibilityModal.vue';
+import { deleteSimulationSession } from '@/service/mal/malApiService.js';
 
 const store = useTaraAssessmentStore();
 const tmStore = useThreatModelStore();
 
-const attackPathModal = ref(null);
-const selectedAttackPath = ref([]);
 const selectedSessionId = ref(null);
 const expandingSessionId = ref(null);
+const deletingSessionId = ref(null);
+const isAttackFeasibilityModalOpen = ref(false);
+const selectedAttackFeasibilityRow = ref(null);
 
-const feasibilityOptions = ['Very Low', 'Low', 'Medium', 'High', 'Very High'];
 const impactRatingOptions = ['Negligible', 'Moderate', 'Major', 'Severe'];
 const riskTreatmentOptions = ['Avoid', 'Reduce', 'Share', 'Retain'];
 const calOptions = ['CAL 1', 'CAL 2', 'CAL 3', 'CAL 4'];
 
 const normalizedAssessments = computed(() =>
-  store.assessments.map((item) => ({
-    ...item,
-    parsed_attack_path: parseAttackPath(item.attack_path)
-  }))
+  store.assessments.map((item) => {
+    const parsedAttackPath = parseAttackPath(item.attack_path);
+    return {
+      ...item,
+      parsed_attack_path: parsedAttackPath,
+      parsed_attack_feasibility: parseAttackFeasibilityField(item.attack_feasibility),
+      analysis_batch_id: parsedAttackPath?.analysis_batch_id || null,
+      generated_path_entries: extractGeneratedPathEntries(parsedAttackPath)
+    };
+  })
 );
 
 const normalizedMalsimSessions = computed(() =>
@@ -435,14 +518,112 @@ const selectedSessionSummary = computed(() => {
 
 const selectedSessionAssessments = computed(() => {
   if (!selectedSessionId.value) return [];
-  return normalizedAssessments.value.filter((item) => item.session_id === selectedSessionId.value);
+  return normalizedAssessments.value
+    .filter((item) => item.session_id === selectedSessionId.value)
+    .slice()
+    .sort(compareAssessmentOrder);
 });
 
-const selectedPrimaryAssessment = computed(() => selectedSessionAssessments.value[0] || null);
+const selectedSessionAssessmentGroups = computed(() => {
+  const grouped = new Map();
+
+  selectedSessionAssessments.value.forEach((assessment) => {
+    const groupKey = getAssessmentGroupKey(assessment);
+
+    if (!grouped.has(groupKey)) {
+      grouped.set(groupKey, {
+        groupKey,
+        createdAt: assessment.created_at,
+        sortId: Number(assessment.id) || 0,
+        session_id: assessment.session_id,
+        target_asset: assessment.target_asset,
+        cia_attribute: assessment.cia_attribute,
+        damage_scenario: assessment.damage_scenario,
+        impact_category: assessment.impact_category,
+        threat_scenario: assessment.threat_scenario,
+        analysisBatchId: assessment.analysis_batch_id || null,
+        sourceShortestPath: Array.isArray(assessment.parsed_attack_path?.source_shortest_path)
+          ? assessment.parsed_attack_path.source_shortest_path
+          : [],
+        scenarioLinkageCheck: assessment.parsed_attack_path?.scenario_linkage_check || null,
+        generatedAttackPaths: {},
+        rows: []
+      });
+    }
+
+    const group = grouped.get(groupKey);
+
+    if (!group.createdAt || compareDateValues(assessment.created_at, group.createdAt) < 0) {
+      group.createdAt = assessment.created_at;
+    }
+    group.sortId = Math.min(group.sortId, Number(assessment.id) || group.sortId || 0);
+
+    if (
+      (!group.sourceShortestPath || group.sourceShortestPath.length === 0) &&
+      Array.isArray(assessment.parsed_attack_path?.source_shortest_path)
+    ) {
+      group.sourceShortestPath = assessment.parsed_attack_path.source_shortest_path;
+    }
+
+    if (!group.scenarioLinkageCheck && assessment.parsed_attack_path?.scenario_linkage_check) {
+      group.scenarioLinkageCheck = assessment.parsed_attack_path.scenario_linkage_check;
+    }
+
+    const pathEntries = assessment.generated_path_entries.length > 0
+      ? assessment.generated_path_entries
+      : [{
+          key: `assessment_${assessment.id}`,
+          label: 'Attack Path',
+          value: {}
+        }];
+
+    pathEntries.forEach((entry) => {
+      if (entry.key && entry.value && !group.generatedAttackPaths[entry.key]) {
+        group.generatedAttackPaths[entry.key] = entry.value;
+      }
+
+      group.rows.push({
+        ...assessment,
+        rowKey: `${assessment.id}-${entry.key}`,
+        sourceAssessment: assessment,
+        attackPathKey: entry.key,
+        attackPathLabel: entry.label,
+        attackPathPayload: buildAttackPathPayload(assessment.parsed_attack_path, entry, assessment.analysis_batch_id),
+        attackPathStepCount: expandedPathSteps(entry).length,
+        attackPathSteps: expandedPathSteps(entry),
+        attackPathText: entry.value?.Rewritten_Attack_Path || '',
+        attackPathRealism: entry.value?.Realism_Assessment || 'N/A',
+        attackPathScore: entry.value?.Completeness_Score_1to5 || '-',
+        attackFeasibilityDetail: assessment.parsed_attack_feasibility,
+        attackFeasibilityTotal: assessment.parsed_attack_feasibility?.total ?? null,
+        attackFeasibilityLegacyLabel: assessment.parsed_attack_feasibility?.legacyLabel || ''
+      });
+    });
+  });
+
+  return Array.from(grouped.values())
+    .sort(compareAssessmentGroupOrder)
+    .map((group, index) => ({
+      ...group,
+      rows: group.rows.slice().sort(compareAssessmentRowOrder),
+      rowSpan: group.rows.length,
+      displayIndex: index + 1,
+      attackPathPayload: {
+        analysis_batch_id: group.analysisBatchId,
+        source_shortest_path: group.sourceShortestPath || [],
+        generated_attack_paths: group.generatedAttackPaths,
+        scenario_linkage_check: group.scenarioLinkageCheck || null
+      }
+    }));
+});
+
+const selectedLatestAssessmentGroup = computed(() =>
+  selectedSessionAssessmentGroups.value[selectedSessionAssessmentGroups.value.length - 1] || null
+);
 
 const selectedSessionAttackPath = computed(() => {
-  if (selectedPrimaryAssessment.value?.parsed_attack_path) {
-    return selectedPrimaryAssessment.value.parsed_attack_path;
+  if (selectedLatestAssessmentGroup.value?.attackPathPayload) {
+    return selectedLatestAssessmentGroup.value.attackPathPayload;
   }
 
   const summary = selectedSessionSummary.value;
@@ -474,31 +655,24 @@ const shortestPathSteps = computed(() => {
   return [];
 });
 
-const generatedPathEntries = computed(() => {
-  const generatedPaths = selectedSessionAttackPath.value?.generated_attack_paths || {};
-  return Object.entries(generatedPaths)
-    .sort(([leftKey], [rightKey]) => comparePathKeys(leftKey, rightKey))
-    .map(([key, value]) => ({
-      key,
-      label: key.replace('_', ' ').toUpperCase(),
-      value
-    }));
-});
+const generatedPathEntries = computed(() =>
+  extractGeneratedPathEntries(selectedSessionAttackPath.value)
+);
 
 const scenarioLinkageCheck = computed(() =>
   selectedSessionAttackPath.value?.scenario_linkage_check || null
 );
 
 const canExpandSelectedSession = computed(() =>
-  Boolean(
-    selectedSessionSummary.value &&
-    !selectedSessionSummary.value.hasAnalysis &&
-    selectedSessionSummary.value.simulationResult
-  )
+  Boolean(selectedSessionSummary.value?.simulationResult)
 );
 
 const isExpandingSelectedSession = computed(() =>
   expandingSessionId.value === selectedSessionId.value
+);
+
+const isDeletingSelectedSession = computed(() =>
+  deletingSessionId.value === selectedSessionId.value
 );
 
 function expandedPathSteps(path) {
@@ -638,6 +812,110 @@ function comparePathKeys(leftKey, rightKey) {
   return String(leftKey).localeCompare(String(rightKey));
 }
 
+function extractGeneratedPathEntries(attackPath) {
+  const generatedPaths = attackPath?.generated_attack_paths || {};
+
+  return Object.entries(generatedPaths)
+    .filter(([, value]) => value && typeof value === 'object')
+    .sort(([leftKey], [rightKey]) => comparePathKeys(leftKey, rightKey))
+    .map(([key, value]) => ({
+      key,
+      label: formatAttackPathLabel(key),
+      value
+    }));
+}
+
+function formatAttackPathLabel(pathKey) {
+  const match = String(pathKey || '').match(/(\d+)$/);
+  if (match) {
+    return `Attack Path ${match[1]}`;
+  }
+
+  return String(pathKey || 'Attack Path')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function buildAttackPathPayload(baseAttackPath, entry, analysisBatchId = null) {
+  if (!entry?.key || !entry?.value) {
+    return baseAttackPath || null;
+  }
+
+  return {
+    analysis_batch_id: analysisBatchId || baseAttackPath?.analysis_batch_id || null,
+    source_shortest_path: Array.isArray(baseAttackPath?.source_shortest_path)
+      ? baseAttackPath.source_shortest_path
+      : [],
+    generated_attack_paths: {
+      [entry.key]: entry.value
+    },
+    scenario_linkage_check: baseAttackPath?.scenario_linkage_check || null
+  };
+}
+
+function getAssessmentGroupKey(assessment) {
+  if (assessment.analysis_batch_id) {
+    return `batch:${assessment.analysis_batch_id}`;
+  }
+
+  if (assessment.generated_path_entries.length > 1) {
+    return `legacy-combined:${assessment.id}`;
+  }
+
+  return [
+    'legacy',
+    assessment.session_id || '',
+    assessment.target_asset || '',
+    assessment.cia_attribute || '',
+    assessment.damage_scenario || '',
+    assessment.impact_category || '',
+    assessment.threat_scenario || '',
+    roundToSecond(assessment.created_at)
+  ].join('|');
+}
+
+function roundToSecond(value) {
+  const date = parseDateValue(value);
+  if (!date) return String(value || '');
+  return date.toISOString().slice(0, 19);
+}
+
+function parseDateValue(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function compareDateValues(leftValue, rightValue) {
+  const leftDate = parseDateValue(leftValue);
+  const rightDate = parseDateValue(rightValue);
+
+  if (!leftDate && !rightDate) return 0;
+  if (!leftDate) return -1;
+  if (!rightDate) return 1;
+
+  return leftDate.getTime() - rightDate.getTime();
+}
+
+function compareAssessmentOrder(left, right) {
+  const dateDiff = compareDateValues(left.created_at, right.created_at);
+  if (dateDiff !== 0) return dateDiff;
+  return (Number(left.id) || 0) - (Number(right.id) || 0);
+}
+
+function compareAssessmentGroupOrder(left, right) {
+  const dateDiff = compareDateValues(left.createdAt, right.createdAt);
+  if (dateDiff !== 0) return dateDiff;
+  return (Number(left.sortId) || 0) - (Number(right.sortId) || 0);
+}
+
+function compareAssessmentRowOrder(left, right) {
+  const pathDiff = comparePathKeys(left.attackPathKey || '', right.attackPathKey || '');
+  if (pathDiff !== 0) return pathDiff;
+  return compareAssessmentOrder(left, right);
+}
+
 function parseAttackPath(attackPath) {
   if (!attackPath) return null;
 
@@ -653,6 +931,52 @@ function parseAttackPath(attackPath) {
   return attackPath;
 }
 
+function parseAttackFeasibilityField(value) {
+  if (!value) return null;
+
+  if (typeof value === 'object') {
+    return normalizeAttackFeasibilityPayload(value);
+  }
+
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    return normalizeAttackFeasibilityPayload(JSON.parse(trimmed));
+  } catch (_) {
+    return {
+      total: null,
+      legacyLabel: trimmed,
+      details: {}
+    };
+  }
+}
+
+function normalizeAttackFeasibilityPayload(value) {
+  const details = value?.details || {};
+
+  return {
+    total: toFiniteNumberOrNull(value?.total),
+    legacyLabel: '',
+    details: {
+      elapsed_time: toFiniteNumberOrNull(details?.elapsed_time),
+      specialist_expertise: toFiniteNumberOrNull(details?.specialist_expertise),
+      knowledge_of_item_or_component: toFiniteNumberOrNull(details?.knowledge_of_item_or_component),
+      windows_of_opportunity: toFiniteNumberOrNull(details?.windows_of_opportunity),
+      equipment: toFiniteNumberOrNull(details?.equipment)
+    }
+  };
+}
+
+function toFiniteNumberOrNull(value) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
+}
+
 function formatDate(value) {
   if (!value) return 'Unknown';
 
@@ -666,6 +990,18 @@ function formatDate(value) {
     hour: '2-digit',
     minute: '2-digit'
   }).format(date);
+}
+
+function formatAttackFeasibilitySummary(row) {
+  if (row?.attackFeasibilityTotal !== null && row?.attackFeasibilityTotal !== undefined) {
+    return `Final ${Number(row.attackFeasibilityTotal).toFixed(2)}`;
+  }
+
+  if (row?.attackFeasibilityLegacyLabel) {
+    return row.attackFeasibilityLegacyLabel;
+  }
+
+  return 'Not Assessed';
 }
 
 function ciaBadgeClass(cia) {
@@ -700,12 +1036,6 @@ async function expandSelectedSessionAttackPaths() {
   }
 }
 
-function showAttackPath(item) {
-  const path = parseAttackPath(item.attack_path);
-  selectedAttackPath.value = path || [];
-  attackPathModal.value?.show();
-}
-
 async function onFieldUpdate(item, field, value) {
   try {
     await store.updateAssessment(item.id, { [field]: value });
@@ -714,13 +1044,64 @@ async function onFieldUpdate(item, field, value) {
   }
 }
 
-async function confirmDelete(id) {
-  if (!confirm('Are you sure you want to delete this assessment?')) return;
+function openAttackFeasibilityModal(row) {
+  selectedAttackFeasibilityRow.value = row;
+  isAttackFeasibilityModalOpen.value = true;
+}
+
+function closeAttackFeasibilityModal() {
+  isAttackFeasibilityModalOpen.value = false;
+  selectedAttackFeasibilityRow.value = null;
+}
+
+async function saveAttackFeasibilityDetail(serializedPayload) {
+  if (!selectedAttackFeasibilityRow.value?.sourceAssessment?.id) return;
 
   try {
-    await store.deleteAssessment(id);
+    await store.updateAssessment(selectedAttackFeasibilityRow.value.sourceAssessment.id, {
+      attack_feasibility: serializedPayload
+    });
+    closeAttackFeasibilityModal();
+  } catch (err) {
+    alert(`Update failed: ${err.message}`);
+  }
+}
+
+async function confirmDeleteAttackPath(row) {
+  if (!row?.sourceAssessment?.id) return;
+  if (!confirm(`Are you sure you want to delete ${row.attackPathLabel || 'this attack path'}?`)) return;
+
+  try {
+    await store.deleteAssessmentAttackPath(row.sourceAssessment.id, row.attackPathKey);
   } catch (err) {
     alert(`삭제 실패: ${err.message}`);
+  }
+}
+
+async function deleteSelectedSession() {
+  const session = selectedSessionSummary.value;
+  if (!session?.sessionId) return;
+
+  if (!confirm('Are you sure you want to delete this simulation session and all related assessments?')) {
+    return;
+  }
+
+  deletingSessionId.value = session.sessionId;
+
+  try {
+    await store.deleteSessionAssessments(session.sessionId);
+    tmStore.removeMalsimSession(session.sessionId);
+
+    try {
+      await deleteSimulationSession(session.sessionId);
+    } catch (cleanupErr) {
+      console.warn('[DashboardView] Failed to clean up simulation session:', cleanupErr);
+      alert(`Session was removed from the dashboard, but simulator cleanup failed: ${cleanupErr.message}`);
+    }
+  } catch (err) {
+    alert(`Session deletion failed: ${err.message}`);
+  } finally {
+    deletingSessionId.value = null;
   }
 }
 </script>
@@ -741,5 +1122,161 @@ async function confirmDelete(id) {
 
 .path-accordion summary::-webkit-details-marker {
   display: none;
+}
+
+.collapsible-section summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsible-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsible-section summary::after {
+  content: '\f078';
+  font-family: 'Font Awesome 7 Free';
+  font-weight: 900;
+  font-size: 0.8rem;
+  color: #6c757d;
+  transition: transform 0.2s ease;
+}
+
+.collapsible-section:not([open]) summary::after {
+  transform: rotate(-90deg);
+}
+
+.session-sidebar {
+  min-height: 100%;
+}
+
+.assessment-table {
+  table-layout: fixed;
+}
+
+.assessment-table th,
+.assessment-table td {
+  vertical-align: top;
+}
+
+.cia-column {
+  width: 92px;
+}
+
+.impact-column {
+  width: 108px;
+}
+
+.cia-column,
+.impact-column,
+.cia-cell,
+.impact-cell {
+  text-align: center;
+}
+
+.attack-path-column {
+  width: 34%;
+}
+
+.assessment-panel-column {
+  width: 220px;
+}
+
+.actions-column {
+  width: 76px;
+}
+
+.attack-path-inline {
+  min-width: 0;
+}
+
+.attack-path-steps {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.attack-path-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.attack-path-step-label {
+  flex-shrink: 0;
+  font-weight: 600;
+  color: #495057;
+}
+
+.attack-path-step span:last-child {
+  word-break: break-word;
+}
+
+.assessment-panel {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.assessment-field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.assessment-field-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.assessment-action-button {
+  width: 100%;
+}
+
+.assessment-feasibility-summary {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.assessment-helper-text {
+  font-size: 0.74rem;
+  color: #6c757d;
+  word-break: break-word;
+}
+
+.group-divider > td {
+  border-top-width: 2px;
+}
+
+.actions-cell {
+  min-width: 76px;
+}
+
+.actions-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+}
+
+.compact-badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.35em 0.5em;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  white-space: normal;
+  word-break: break-word;
+}
+
+:deep(.assessment-table .editable-dropdown .form-select) {
+  width: 100%;
+  min-width: 0;
+  font-size: 0.82rem;
+  padding-right: 1.8rem;
 }
 </style>

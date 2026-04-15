@@ -72,9 +72,41 @@ export async function deleteAssessment(id) {
     }
 }
 
+/**
+ * assessment 내부의 특정 attack path 삭제
+ * @param {number|string} id - Assessment ID
+ * @param {string} pathKey - Attack path key
+ * @returns {Promise<{ action: 'updated' | 'deleted', assessment: Object }>}
+ */
+export async function deleteAssessmentAttackPath(id, pathKey) {
+    const encodedPathKey = encodeURIComponent(pathKey);
+    const response = await apiClient.delete(`/v1/tara/assessments/${id}/attack-path/${encodedPathKey}`);
+
+    if (response.data.success) {
+        return response.data.data;
+    }
+    throw new Error(response.data.message || 'Failed to delete attack path');
+}
+
+/**
+ * 세션에 속한 평가 결과 전체 삭제
+ * @param {string} sessionId - 세션 ID
+ * @returns {Promise<{ sessionId: string, deletedCount: number }>}
+ */
+export async function deleteAssessmentsBySessionId(sessionId) {
+    const response = await apiClient.delete(`/v1/tara/assessments/session/${sessionId}`);
+
+    if (response.data.success) {
+        return response.data.data;
+    }
+    throw new Error(response.data.message || 'Failed to delete assessments by session');
+}
+
 export default {
     analyzeThreat,
     getAllAssessments,
     updateAssessment,
-    deleteAssessment
+    deleteAssessmentAttackPath,
+    deleteAssessment,
+    deleteAssessmentsBySessionId
 };
