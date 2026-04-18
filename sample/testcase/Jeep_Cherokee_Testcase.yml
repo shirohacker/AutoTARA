@@ -1,0 +1,258 @@
+assets:
+  0:
+    associated_assets:
+      hardwarePlatform:
+        4: Steering System
+    extras:
+      position:
+        x: -731.0
+        y: -590.0
+    name: SensorOrActuator
+    type: SensorOrActuator
+  1:
+    associated_assets:
+      hardwarePlatform:
+        5: TPMS
+    extras:
+      position:
+        x: 36.0
+        y: -574.0
+    name: SensorOrActuator
+    type: SensorOrActuator
+  2:
+    associated_assets:
+      hardware:
+        4: Steering System
+    extras:
+      position:
+        x: -1207.5
+        y: -363.0
+    name: Firmware
+    type: Firmware
+  3:
+    associated_assets:
+      hardware:
+        5: TPMS
+    extras:
+      position:
+        x: 547.0
+        y: -357.0
+    name: Firmware
+    type: Firmware
+  4:
+    associated_assets:
+      firmware:
+        2: Firmware
+      sensorsOrActuators:
+        0: SensorOrActuator
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: -743.0
+        y: -369.0
+    name: Steering System
+    type: ECU
+  5:
+    associated_assets:
+      firmware:
+        3: Firmware
+      sensorsOrActuators:
+        1: SensorOrActuator
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: 47.0
+        y: -357.0
+    name: TPMS
+    type: ECU
+  6:
+    associated_assets:
+      networkECUs:
+        4: Steering System
+        5: TPMS
+        7: Braking System
+        8: PAM
+        9: Acc
+        10: Engine Control
+        11: IOC (V850)
+    extras:
+      position:
+        x: -319.0
+        y: -141.0
+    name: CAN-C
+    type: CANNetwork
+  7:
+    associated_assets:
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: -955.0
+        y: -218.0
+    name: Braking System
+    type: ECU
+  8:
+    associated_assets:
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: -948.0
+        y: -92.0
+    name: PAM
+    type: ECU
+  9:
+    associated_assets:
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: 297.0
+        y: -194.0
+    name: Acc
+    type: ECU
+  10:
+    associated_assets:
+      vehiclenetworks:
+        6: CAN-C
+    extras:
+      position:
+        x: 267.0
+        y: -75.0
+    name: Engine Control
+    type: ECU
+  11:
+    associated_assets:
+      firmware:
+        12: IOC Firmware
+      vehiclenetworks:
+        6: CAN-C
+        13: SPI
+    extras:
+      position:
+        x: -312.0
+        y: 70.5
+    name: IOC (V850)
+    type: ECU
+  12:
+    associated_assets:
+      hardware:
+        11: IOC (V850)
+    extras:
+      position:
+        x: -942.0
+        y: 60.0
+    name: IOC Firmware
+    type: Firmware
+  13:
+    associated_assets:
+      infotainment:
+        17: Uconnect Radio
+      networkECUs:
+        11: IOC (V850)
+        14: BCM
+    extras:
+      position:
+        x: -312.0
+        y: 288.0
+    name: SPI
+    type: VehicleNetwork
+  14:
+    associated_assets:
+      vehiclenetworks:
+        13: SPI
+        15: CAN-IHS
+        16: LINNetwork
+    extras:
+      position:
+        x: 243.0
+        y: 289.5
+    name: BCM
+    type: ECU
+  15:
+    associated_assets:
+      networkECUs:
+        14: BCM
+    extras:
+      position:
+        x: 237.0
+        y: 129.0
+    name: CAN-IHS
+    type: CANNetwork
+  16:
+    associated_assets:
+      networkECUs:
+        14: BCM
+    extras:
+      position:
+        x: 255.0
+        y: 484.5
+    name: LINNetwork
+    type: LINNetwork
+  17:
+    associated_assets:
+      connectPrivileges:
+        18: Superuser
+      connectedNetworks:
+        13: SPI
+    extras:
+      position:
+        x: -304.5
+        y: 486.0
+    name: Uconnect Radio
+    type: InfotainmentSystem
+  18:
+    associated_assets:
+      assignedApplications:
+        21: D-BUS Service
+      connectMachines:
+        17: Uconnect Radio
+    extras:
+      position:
+        x: -298.5
+        y: 651.0
+    name: Superuser
+    type: VehicularIdentity
+  21:
+    associated_assets:
+      assignedVehicularIdentity:
+        18: Superuser
+      networks:
+        22: Internet / OnStar
+      vulnerabilities:
+        23: SoftwareVulnerability
+    extras:
+      position:
+        x: -744.0
+        y: 487.5
+    name: D-BUS Service
+    type: NetworkAccessService
+  22:
+    associated_assets:
+      applications:
+        21: D-BUS Service
+    extras:
+      position:
+        x: -768.0
+        y: 648.0
+    name: Internet / OnStar
+    type: Network
+  23:
+    associated_assets:
+      application:
+        21: D-BUS Service
+    extras:
+      position:
+        x: -1245.0
+        y: 492.0
+    name: SoftwareVulnerability
+    type: SoftwareVulnerability
+metadata:
+  MAL-Toolbox Version: 2.8.1
+  info: Created by the mal-toolbox model python module.
+  langID: org.mal-lang.vehicleLang
+  langVersion: 2.0.1
+  malVersion: 0.1.0-SNAPSHOT
+  name: Jeep_Cherokee_Testcase
