@@ -27,7 +27,7 @@
           </div>
 
           <div v-if="legacyLabel" class="alert alert-secondary py-2 mb-0">
-            기존 저장값: {{ legacyLabel }}
+            Previously saved value: {{ legacyLabel }}
           </div>
 
           <div class="score-grid">
@@ -35,7 +35,7 @@
               <div class="score-card-header">
                 <div>
                   <div class="score-card-title">Elapsed time</div>
-                  <div class="score-card-hint">Shortest path 단계 TTC 평균</div>
+                  <div class="score-card-hint">Average TTC across shortest path steps</div>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-secondary" @click="applyAutoField('elapsed_time')">
                   Apply Auto
@@ -49,7 +49,7 @@
               <div class="score-card-header">
                 <div>
                   <div class="score-card-title">Specialist expertise</div>
-                  <div class="score-card-hint">Required Skills의 `(weight * value)` 평균</div>
+                  <div class="score-card-hint">Average of `(weight * value)` for Required Skills</div>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-secondary" @click="applyAutoField('specialist_expertise')">
                   Apply Auto
@@ -63,7 +63,7 @@
               <div class="score-card-header">
                 <div>
                   <div class="score-card-title">Knowledge of the item or component</div>
-                  <div class="score-card-hint">사용자 평가</div>
+                  <div class="score-card-hint">User assessment</div>
                 </div>
               </div>
               <input v-model="form.knowledge_of_item_or_component" type="number" step="0.01" min="0" class="form-control" />
@@ -73,7 +73,7 @@
               <div class="score-card-header">
                 <div>
                   <div class="score-card-title">Windows of opportunity</div>
-                  <div class="score-card-hint">사용자 평가</div>
+                  <div class="score-card-hint">User assessment</div>
                 </div>
               </div>
               <input v-model="form.windows_of_opportunity" type="number" step="0.01" min="0" class="form-control" />
@@ -83,7 +83,7 @@
               <div class="score-card-header">
                 <div>
                   <div class="score-card-title">Equipment</div>
-                  <div class="score-card-hint">Required Resources의 `(weight * value)` 평균</div>
+                  <div class="score-card-hint">Average of `(weight * value)` for Required Resources</div>
                 </div>
                 <button type="button" class="btn btn-sm btn-outline-secondary" @click="applyAutoField('equipment')">
                   Apply Auto
@@ -125,7 +125,7 @@
               </table>
             </div>
             <div v-else class="text-muted small">
-              Shortest path와 매칭되는 CTSA threat 데이터를 찾지 못했습니다.
+              No CTSA threat data matched the shortest path.
             </div>
           </div>
 
