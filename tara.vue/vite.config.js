@@ -4,6 +4,10 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 
+const viteHost = process.env.VITE_HOST || '127.0.0.1'
+const vitePort = Number(process.env.VITE_PORT || 1234)
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'http://localhost:4000'
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -11,11 +15,11 @@ export default defineConfig({
     vueDevTools(),
   ],
     server: {
-        host: '127.0.0.1', // Forces IPv4
-        port: 1234,
+        host: viteHost,
+        port: vitePort,
         proxy: {
             '/api': {
-                target: 'http://localhost:4000', // 백엔드 서버 주소 (포트 확인 필수!)
+                target: proxyTarget,
                 changeOrigin: true,
             },
         }

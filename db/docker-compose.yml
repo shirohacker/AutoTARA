@@ -5,7 +5,7 @@ services:
     environment:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: passwd2026
-      POSTGRES_DB: tara_db            # 컨테이너 초기화 시 자동 생성됨
+      POSTGRES_DB: tara_db
       TZ: Asia/Seoul
     ports:
       - "5432:5432"
@@ -13,7 +13,6 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./init:/docker-entrypoint-initdb.d:ro
       - ./data:/data:ro
-      - ./backups:/backups:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d $${POSTGRES_DB}"]
       interval: 5s

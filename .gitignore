@@ -8,6 +8,7 @@
 /tara.server/node_modules
 /tara.server/.idea/
 /tara.server/temp/
+/tara.server/.env/
 
 /tara.vue/node_modules
 /tara.vue/.idea/

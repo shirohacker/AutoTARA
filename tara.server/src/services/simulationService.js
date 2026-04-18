@@ -17,6 +17,7 @@ const { v4: uuid } = require('uuid');
 // 임시 파일 저장 디렉토리
 const TEMP_DIR = process.env.SIMULATION_TEMP_DIR || path.join(os.tmpdir(), 'autotara', 'tara-server');
 const SIMULATION_DIR = path.join(TEMP_DIR, 'simulations');
+const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL || 'http://localhost:8000';
 
 // 업로드된 MAL 파일 저장소 (세션별)
 const uploadedFiles = new Map();
@@ -251,7 +252,7 @@ function parseSimulationLog(logPath) {
 
 /**
  * 전체 시뮬레이션을 실행합니다.
- * Python 시뮬레이션 서버(http://localhost:8000)로 파일을 전송합니다.
+ * Python 시뮬레이션 서버로 파일을 전송합니다.
  * 
  * @param {Object} config - 시뮬레이션 설정
  * @param {Object} config.model - MAL 모델 JSON 객체
@@ -331,7 +332,6 @@ async function runSimulation(config) {
         console.log(`[SimulationService] Sending files to Python server...`);
 
         // Python 서버로 요청
-        const PYTHON_SERVER_URL = 'http://localhost:8000';
         const response = await axios.post(
             `${PYTHON_SERVER_URL}/simulation/run-file`,
             formData,
@@ -379,7 +379,7 @@ async function runSimulation(config) {
             console.error('[SimulationService] No response from Python server');
             return {
                 success: false,
-                error: 'Python simulation server is not responding. Please check if the server is running at http://localhost:8000'
+                error: `Python simulation server is not responding. Please check if the server is running at ${PYTHON_SERVER_URL}`
             };
         } else {
             // 요청 설정 중 문제가 발생한 경우
@@ -445,7 +445,6 @@ function createScenario(entryPoint, goal, langFileName, modelFileName) {
  */
 async function getSimulationStatus(sessionId) {
     const axios = require('axios');
-    const PYTHON_SERVER_URL = 'http://localhost:8000';
 
     try {
         const response = await axios.get(
@@ -497,7 +496,6 @@ function buildResultView(data, view) {
  */
 async function getSimulationResult(sessionId, view) {
     const axios = require('axios');
-    const PYTHON_SERVER_URL = 'http://localhost:8000';
 
     try {
         const response = await axios.get(
