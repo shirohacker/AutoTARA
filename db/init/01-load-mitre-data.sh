@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Normalize BOM-stripped CSV copies before loading them into Postgres.
 sanitize_csv() {
   local source_file="$1"
   local target_file="$2"

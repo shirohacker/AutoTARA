@@ -13,7 +13,7 @@ services:
       - ./db/data:/data:ro
       - pgdata:/var/lib/postgresql/data
     ports:
-      - "${DB_HOST_PORT:-5432}:5432"
+      - "${DB_HOST_PORT:-15432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U user -d $${POSTGRES_DB}"]
       interval: 5s
@@ -42,7 +42,7 @@ services:
     env_file:
       - ./tara.server/.env
     ports:
-      - "${TARA_SERVER_HOST_PORT:-4000}:4000"
+      - "${TARA_SERVER_HOST_PORT:-14000}:4000"
     environment:
       PORT: 4000
       DB_HOST: db

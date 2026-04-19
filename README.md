@@ -97,9 +97,9 @@ docker compose up -d --build
 This starts:
 
 *   Frontend: `http://localhost:1234`
-*   Backend API: `http://localhost:4000/api`
+*   Backend API: `http://localhost:14000/api`
 *   MAL Simulator API: `http://localhost:8000`
-*   PostgreSQL: `localhost:5432`
+*   PostgreSQL: `localhost:15432`
 
 #### 2. Stop Services
 
@@ -111,7 +111,7 @@ docker compose down
 
 If a host port is already in use, you can override it at startup.
 
-Example: run PostgreSQL on `5433` instead of `5432`.
+Example: run PostgreSQL on `5433` instead of `15432`.
 
 ```sh
 DB_HOST_PORT=5433 docker compose up -d --build
@@ -119,9 +119,9 @@ DB_HOST_PORT=5433 docker compose up -d --build
 
 Available overrides:
 
-*   `DB_HOST_PORT` (default: `5432`)
+*   `DB_HOST_PORT` (default: `15432`)
 *   `MALSIM_HOST_PORT` (default: `8000`)
-*   `TARA_SERVER_HOST_PORT` (default: `4000`)
+*   `TARA_SERVER_HOST_PORT` (default: `14000`)
 *   `TARA_VUE_HOST_PORT` (default: `1234`)
 
 #### 4. Backend Environment Variables
