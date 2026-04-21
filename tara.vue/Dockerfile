@@ -9,10 +9,10 @@ RUN npm install
 
 COPY . .
 
-# Build with VITE_API_URL set to point to localhost:4000 (standard for local docker-compose where browser accesses backend)
-ENV VITE_API_URL=http://localhost:4000/api
+# Build with VITE_API_URL set to point to localhost:3000 (standard for local docker-compose where browser accesses backend)
+ENV VITE_API_URL=http://localhost:3000/api
 
-EXPOSE 1234
+EXPOSE 8080
 
 # RUN npm run build
 

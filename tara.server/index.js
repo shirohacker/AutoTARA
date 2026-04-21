@@ -8,7 +8,6 @@ const app = express();
 const apiRoutes = require('./src/routes/index');
 
 // .env에서 PORT를 가져오고, 없으면 기본값 3000 사용
-// 제공해주신 설정에 따르면 4000번 포트로 실행됩니다.
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
