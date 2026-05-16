@@ -126,7 +126,7 @@ Available overrides:
 
 #### 4. Backend Environment Variables
 
-The backend service loads environment variables from [`tara.server/.env`](/home/sane/vehiclesec/AutoTARA/tara.server/.env), including Gemini-related settings.
+The backend service loads environment variables from `tara.server/.env`, including Gemini-related settings.
 
 Database and simulator connection values are overridden by Docker Compose so that containers can communicate over the internal Docker network.
 
@@ -167,13 +167,13 @@ python api_server.py
 
 ## 🐳 Docker Information
 
-The full stack is managed through the root [`docker-compose.yml`](/home/sane/vehiclesec/AutoTARA/docker-compose.yml).
+The full stack is managed through the root `docker-compose.yml`.
 
 *   **Database User:** `user`
 *   **Database Name:** `tara_db`
 *   **Database Volume:** `pgdata`
-*   **Database Init Scripts:** [`db/init`](/home/sane/vehiclesec/AutoTARA/db/init)
-*   **MITRE Data Files:** [`db/data`](/home/sane/vehiclesec/AutoTARA/db/data)
+*   **Database Init Scripts:** `db/init`
+*   **MITRE Data Files:** `db/data`
 
 ## 👏 Acknowledgements
 
